@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agencia Autónoma del Poder Blando</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --oxford-blue: #14315D;
+    --oxford-blue-deep: #0C2242;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #ffffff;
+  }
+
+  header {
+    background: linear-gradient(180deg, var(--oxford-blue) 0%, var(--oxford-blue-deep) 100%);
+    padding: 1rem 1.5rem;
+    text-align: center;
+  }
+
+  header h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 600;
+    font-size: clamp(0.75rem, 4.2vw, 1.1rem);
+    color: #ffffff;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .logo-wrap {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.9rem 1rem 0.75rem;
+  }
+
+  .logo-wrap .sword-text-group {
+    grid-column: 1;
+    justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    min-width: 0;
+  }
+
+  .logo-wrap .shield {
+    grid-column: 2;
+  }
+
+  .logo-wrap img.shield {
+    width: 72px;
+    height: auto;
+  }
+
+  .logo-wrap img.sword {
+    width: 20px;
+    height: auto;
+    flex-shrink: 0;
+  }
+
+  .directrices-stack {
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--oxford-blue);
+    text-transform: uppercase;
+    text-align: left;
+    line-height: 1.05;
+  }
+
+  .titulo-oficial {
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--oxford-blue);
+    font-size: clamp(1.3rem, 4vw, 2rem);
+    font-weight: 700;
+    line-height: 1.35;
+    max-width: 760px;
+    margin: 32px auto 0;
+    padding: 0 24px 24px;
+    border-bottom: none;
+    text-align: left;
+  }
+
+  .directrices-stack .line1 {
+    font-weight: 500;
+    font-size: clamp(0.4rem, 2.6vw, 0.55rem);
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+
+  .directrices-stack .line2 {
+    font-weight: 700;
+    font-size: clamp(0.62rem, 4vw, 0.85rem);
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+
+  footer.oficial-footer {
+    position: relative;
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+  }
+
+  footer.oficial-footer .banda-blanca {
+    background: #ffffff;
+    height: auto;
+    min-height: 60px;
+    padding: 12px 24px 80px;
+    max-width: 760px;
+    width: 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
+  }
+
+  /* Contenido oficial - va dentro de banda-blanca - fuente tipo libro como la captura */
+  footer.oficial-footer .banda-blanca .contenido-oficial {
+    font-family: 'PT Serif', 'Times New Roman', Times, Georgia, serif;
+    color: #1a1a1a;
+    font-size: clamp(0.92rem, 2.4vw, 1.02rem);
+    line-height: 1.68;
+    text-align: left;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+  }
+
+  footer.oficial-footer .banda-blanca .contenido-oficial p {
+    margin-bottom: 0;
+    text-align: justify;
+    hyphens: auto;
+  }
+
+  footer.oficial-footer .banda-azul {
+    background: linear-gradient(180deg, var(--oxford-blue) 0%, var(--oxford-blue-deep) 100%);
+    height: 140px;
+    flex-shrink: 0;
+  }
+
+  footer.oficial-footer .sello-wrap {
+    position: absolute;
+    bottom: 85px; /* anclado al borde superior de la banda azul: 140 - 55 */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #ffffff;
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25));
+  }
+
+  footer.oficial-footer .sello-wrap img.shield {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 50%;
+    mix-blend-mode: normal;
+  }
+
+  /* Marca de agua sello gris - fija y casi transparente */
+  .marca-agua-sello {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: min(70vw, 500px);
+    height: min(70vw, 500px);
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.09;
+    filter: grayscale(1);
+  }
+
+  .marca-agua-sello img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+
+
+  /* Fecha dinámica arriba a la derecha */
+/* Top fijo - header + logo */
+  header {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    z-index: 1001 !important;
+  }
+
+  .logo-wrap {
+    position: fixed !important;
+    top: 48px !important;
+    left: 0 !important;
+    width: 100% !important;
+    background: #ffffff !important;
+    z-index: 1000 !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+
+  /* Empujar contenido para que no quede debajo del top fijo */
+  .titulo-oficial {
+    margin-top: 145px !important;
+  }
+
+  /* Bottom fijo - banda azul y sello */
+  footer.oficial-footer .banda-azul {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    z-index: 1001 !important;
+  }
+
+  footer.oficial-footer .sello-wrap {
+    position: fixed !important;
+    bottom: 85px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 1002 !important;
+  }
+
+  /* Ajustar banda blanca para que no se oculte detrás del bottom fijo */
+  footer.oficial-footer .banda-blanca {
+    padding-bottom: 160px !important;
+  }
+
+  body {
+    padding-bottom: 140px;
+  }
+
+  /* Marca de agua por debajo de los fijos */
+  .marca-agua-sello {
+    z-index: 5 !important;
+  }
+
+
+  /* FIX: blancos parejos sin linea */
+  body {
+    background: #ffffff !important;
+  }
+
+  .logo-wrap {
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-bottom: none !important;
+  }
+
+  .titulo-oficial {
+    background: #ffffff !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  footer.oficial-footer .banda-blanca {
+    background: #ffffff !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Evitar gap por subpixel entre fixed y contenido */
+  .logo-wrap::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: #ffffff;
+  }
+
+
+  /* Fecha sticky - se queda pegada cuando llega arriba */
+/* Arco ornamental inferior - medio circulo fijo - relieves visibles */
+  .marca-agua-arco {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 115% !important;
+    max-width: 950px !important;
+    height: 360px !important;
+    z-index: 1002 !important;
+    pointer-events: none !important;
+    overflow: hidden !important;
+    border-radius: 50% 50% 0 0 / 75% 75% 0 0 !important;
+    opacity: 0.08 !important;
+  }
+
+  .marca-agua-arco img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    object-position: top center !important;
+    display: block !important;
+  }
+
+
+  /* Fecha - transparente sin fondo, sticky */
+  .fecha-actual {
+    text-align: right;
+    font-family: 'PT Serif', 'Times New Roman', Times, serif;
+    font-size: clamp(0.85rem, 2vw, 0.95rem);
+    color: var(--oxford-blue);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    margin: 0 0 18px auto;
+    width: fit-content;
+    min-width: 90px;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    position: sticky !important;
+    top: 152px !important;
+    z-index: 998 !important;
+    padding: 6px 8px 6px 0 !important;
+  }
+
+
+  /* Estado fijo cuando llega a la posición */
+  .fecha-actual.is-fixed {
+    position: fixed !important;
+    top: 152px !important;
+    right: 24px !important;
+    left: auto !important;
+    z-index: 999 !important;
+    background: transparent !important;
+    margin: 0 !important;
+  }
+
+  @media (min-width: 768px) {
+    .fecha-actual.is-fixed {
+      right: calc(50% - 320px) !important;
+    }
+  }
+
+
+  /* 3 figuras - espacio amarillo - sin fondo blanco */
+  #tres-figuras-sticky {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 14px;
+    width: fit-content;
+    margin: 8px auto 12px auto;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    position: relative;
+    z-index: 998;
+  }
+
+  #tres-figuras-sticky img {
+    width: auto;
+    height: 22px;
+    object-fit: contain;
+    display: block;
+    background: transparent !important;
+    border: none !important;
+  }
+
+  #tres-figuras-sticky.is-fixed {
+    position: fixed !important;
+    top: 152px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    margin: 0 !important;
+    z-index: 999 !important;
+    background: transparent !important;
+  }
+
+
+  /* --- TITULO clon que aparece en header cuando el original desaparece --- */
+  #titulo-clon-header {
+    grid-column: 3;
+    justify-self: start;
+    align-self: center;
+    max-width: 240px;
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--oxford-blue);
+    font-weight: 700;
+    font-size: clamp(0.58rem, 1.6vw, 0.82rem);
+    line-height: 1.18;
+    text-align: left;
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 0.45s cubic-bezier(0.4,0,0.2,1), transform 0.45s cubic-bezier(0.4,0,0.2,1);
+    pointer-events: none;
+    visibility: hidden;
+    padding-right: 8px;
+  }
+
+  #titulo-clon-header.visible {
+    opacity: 1;
+    transform: translateY(0);
+    visibility: visible;
+  }
+
+  @media (max-width: 600px) {
+    #titulo-clon-header {
+      max-width: 150px;
+      font-size: clamp(0.5rem, 2.8vw, 0.68rem);
+      line-height: 1.15;
+    }
+  }
+
+
+  /* --- AAPB en banda azul inferior - estilo THE WHITE HOUSE --- */
+  footer.oficial-footer .banda-azul {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-end !important;
+    padding-bottom: 22px !important;
+  }
+  .aapb-marca {
+    font-family: 'Cormorant Garamond', 'Times New Roman', Times, serif;
+    font-weight: 700;
+    font-size: clamp(2.4rem, 11vw, 4.2rem);
+    color: #ffffff;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    text-transform: uppercase;
+    text-align: center;
+    white-space: nowrap;
+    transform: scaleY(1.05);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  }
+  @media (max-width: 600px) {
+    .aapb-marca {
+      font-size: clamp(2rem, 13vw, 3rem);
+      padding-bottom: 6px;
+    }
+  }
+
+
+  /* --- FIRMA BLOQUE - idéntico a captura referencia --- */
+  .firma-bloque {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin: 28px 0 0 auto;
+    width: fit-content;
+    max-width: 240px;
+    margin-left: auto;
+  }
+  .firma-bloque .firma-img-wrap {
+    width: 175px;
+    height: 62px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-end;
+    margin-bottom: 4px;
+  }
+  .firma-bloque .firma-img-wrap img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    display: block;
+  }
+  .firma-bloque .firma-linea {
+    width: 100%;
+    height: 1px;
+    background: #0C2242;
+    margin: 2px 0 7px 0;
+  }
+  .firma-bloque .firma-texto {
+    font-family: 'Cormorant Garamond', 'PT Serif', serif;
+    font-size: 0.72rem;
+    line-height: 1.25;
+    color: #0C2242;
+    text-align: center;
+    width: 100%;
+  }
+  .firma-bloque .firma-texto strong {
+    font-weight: 700;
+  }
+  @media (max-width: 600px) {
+    .firma-bloque {
+      max-width: 190px;
+      margin-top: 22px;
+    }
+    .firma-bloque .firma-img-wrap {
+      width: 145px;
+      height: 52px;
+    }
+    .firma-bloque .firma-texto {
+      font-size: 0.65rem;
+    }
+  }
+
+
+  /* --- FIX V4: fecha y figura fijas arriba, título visible, info no choca --- */
+  .titulo-oficial {
+    position: relative !important;
+    z-index: 997 !important;
+    background: #ffffff !important;
+  }
+  /* Escudo blanco detrás de fecha y figura - debajo de ellas pero encima del texto */
+  .sticky-shield-bg {
+    position: fixed !important;
+    top: 108px !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 60px !important;
+    background: #ffffff !important;
+    z-index: 996 !important;
+    pointer-events: none !important;
+  }
+  .sticky-fade-out {
+    position: fixed !important;
+    top: 168px !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 50px !important;
+    background: linear-gradient(to bottom, #ffffff 0%, #ffffff 45%, rgba(255,255,255,0) 100%) !important;
+    z-index: 996 !important;
+    pointer-events: none !important;
+  }
+  /* Asegurar que fecha y figura siempre estén por encima */
+  #tres-figuras-sticky, .fecha-actual {
+    z-index: 998 !important;
+  }
+  #tres-figuras-sticky.is-fixed, .fecha-actual.is-fixed {
+    z-index: 999 !important;
+  }
+  /* Contenido debajo de todo */
+  footer.oficial-footer .banda-blanca .contenido-oficial {
+    position: relative !important;
+    z-index: 1 !important;
+  }
+
+</style>
+</head>
+<body>
+<div class="marca-agua-sello"><img loading="lazy" decoding="async" src="images/marca-agua-sello.webp" alt="marca de agua"></div>
+
+
+<header>
+  <h1>Agencia Autónoma del Poder Blando</h1>
+</header>
+
+<div class="sticky-shield-bg"></div>
+<div class="sticky-fade-out"></div>
+
+
+<div class="logo-wrap">
+  <span class="sword-text-group">
+    <img loading="lazy" decoding="async" class="sword" src="images/espada.webp" alt="Espada de Santiago">
+    <span class="directrices-stack">
+      <span class="line1">Departamento de</span><br>
+      <span class="line2">Directrices</span>
+    </span>
+  </span>
+  <img loading="lazy" decoding="async" class="shield" src="images/escudo-principal.svg" alt="Escudo de la Agencia Autónoma del Poder Blando">
+<div id="titulo-clon-header" aria-hidden="true"></div>
+</div>
+
+<p class="titulo-oficial">La incorporación de gritas a los ABC demuestran cifras mayores a las administradas</p>
+
+<footer class="oficial-footer">
+  
+<div class="banda-blanca">
+  
+
+<div id="tres-figuras-sticky">
+  <img loading="lazy" decoding="async" src="images/buho-figura.webp" alt="buho" style="width:48px; height:auto;">
+</div>
+
+
+<div class="fecha-actual" id="fecha-actual"></div>
+  <div class="contenido-oficial">
+    <p>Detrás de ese poder hay solo 10 personas —ninguna votada por un mexicano—: desde Trump y su secretario del Tesoro, hasta el jefe de la Reserva Federal, el CEO de JPMorgan y el de BlackRock, más los líderes de China, Rusia, India y Brasil, cuya decisiones sobre tasas, sanciones, comercio y flujos de capital mueven el peso sin que México tenga voto en la mesa. Ni el FMI, ni el Banco de Pagos Internacionales, ni la OMC cambian eso: México los sigue, no los dirige.</p>
+  </div>
+<div class="firma-bloque">
+  <div class="firma-img-wrap">
+    <img loading="lazy" decoding="async" src="images/firma-bruno.webp" alt="Firma Bruno Hernández">
+  </div>
+  <div class="firma-linea"></div>
+  <div class="firma-texto">
+    Coordinador de<br>Lineamientos Estratégicos<br><strong>Bruno Hernández</strong>
+  </div>
+</div>
+
+</div>
+
+  <div class="banda-azul"><div class="aapb-marca">AAPB</div></div>
+  <div class="sello-wrap">
+    <img loading="lazy" decoding="async" class="shield" src="images/escudo-principal.svg" alt="Sello oficial">
+  </div>
+</footer>
+
+
+<div class="marca-agua-arco"><img loading="lazy" decoding="async" src="images/arco-inferior.webp" alt="ornamento arco"></div>
+
+
+<script>
+  (function() {
+    const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const ahora = new Date();
+    const dia = ahora.getDate();
+    const mes = meses[ahora.getMonth()];
+    const anio = ahora.getFullYear();
+    const fechaEl = document.getElementById('fecha-actual');
+    if (fechaEl) {
+      fechaEl.textContent = `${mes} ${dia}, ${anio}`;
+    }
+
+    function makeSticky(elementId, placeholderId) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      let placeholder = null;
+      let originalTop = 0;
+
+      function calcOriginal() {
+        const isFixed = el.classList.contains('is-fixed');
+        if (isFixed) {
+          el.classList.remove('is-fixed');
+          const ph = document.getElementById(placeholderId);
+          if (ph && ph.parentNode) ph.parentNode.removeChild(ph);
+          placeholder = null;
+        }
+        originalTop = el.getBoundingClientRect().top + window.scrollY;
+        checkScroll();
+      }
+
+      function checkScroll() {
+        const stickyTop = 152;
+        if (window.scrollY + stickyTop >= originalTop - 5) {
+          if (!el.classList.contains('is-fixed')) {
+            placeholder = document.createElement('div');
+            placeholder.style.height = el.offsetHeight + 'px';
+            if (elementId === 'fecha-actual') {
+              placeholder.style.margin = '0 0 18px auto';
+              placeholder.style.width = 'fit-content';
+            } else {
+              placeholder.style.margin = '8px auto 12px auto';
+              placeholder.style.width = 'fit-content';
+            }
+            placeholder.id = placeholderId;
+            el.parentNode.insertBefore(placeholder, el);
+            el.classList.add('is-fixed');
+          }
+        } else {
+          if (el.classList.contains('is-fixed')) {
+            el.classList.remove('is-fixed');
+            const ph = document.getElementById(placeholderId);
+            if (ph && ph.parentNode) ph.parentNode.removeChild(ph);
+            placeholder = null;
+          }
+        }
+      }
+
+      window.addEventListener('scroll', checkScroll, { passive: true });
+      window.addEventListener('resize', calcOriginal);
+      setTimeout(calcOriginal, 100);
+      return { calcOriginal };
+    }
+
+    makeSticky('fecha-actual', 'fecha-placeholder');
+    makeSticky('tres-figuras-sticky', 'tres-placeholder');
+  })();
+</script>
+
+
+<script>
+(function(){
+  const TITULO_TEXTO = document.querySelector('.titulo-oficial');
+  const clone = document.getElementById('titulo-clon-header');
+  if(!TITULO_TEXTO || !clone) return;
+  // Copiar texto del TITULO original (preservando el contenido exacto)
+  clone.textContent = TITULO_TEXTO.textContent.trim();
+
+  // Función para decidir visibilidad
+  const check = () => {
+    const rect = TITULO_TEXTO.getBoundingClientRect();
+    // Cuando el TITULO original ya no es visible (su bottom está por encima del header fijo ~145px)
+    if(rect.bottom < 145){
+      if(!clone.classList.contains('visible')){
+        clone.classList.add('visible');
+      }
+    } else {
+      if(clone.classList.contains('visible') && rect.top > 100){
+        // Solo ocultar cuando el original vuelve a aparecer lo suficiente
+        clone.classList.remove('visible');
+      } else if(rect.top >= 145){
+        clone.classList.remove('visible');
+      }
+    }
+  };
+
+  // Observer más eficiente
+  const observer = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      const rect = entry.boundingClientRect;
+      if(!entry.isIntersecting && rect.top < 145){
+        clone.classList.add('visible');
+      } else if(entry.isIntersecting){
+        clone.classList.remove('visible');
+      }
+    });
+  }, { rootMargin: '-145px 0px 0px 0px', threshold: 0 });
+
+  observer.observe(TITULO_TEXTO);
+  // Fallback scroll suave
+  let ticking = false;
+  window.addEventListener('scroll', ()=>{
+    if(!ticking){
+      requestAnimationFrame(()=>{
+        check();
+        ticking=false;
+      });
+      ticking=true;
+    }
+  }, {passive:true});
+  window.addEventListener('resize', check);
+  // Check inicial
+  setTimeout(check, 200);
+})();
+</script>
+
+</body>
+</html>
