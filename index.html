@@ -600,12 +600,248 @@
     }
   }
 
+  /* --- MODO EDITABLE: doble clic / doble toque abre el recuadro de edición --- */
+  .editable {
+    touch-action: manipulation;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: box-shadow 0.15s ease, background-color 0.15s ease;
+  }
+  .editable:hover {
+    background-color: rgba(20, 49, 93, 0.06);
+  }
+  .editable.editing {
+    cursor: text;
+    outline: none;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 2px var(--oxford-blue), 0 4px 14px rgba(0,0,0,0.18);
+  }
+  /* Textos en blanco sobre fondo azul */
+  header .editable:hover,
+  .aapb-marca.editable:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+  }
+  header .editable.editing,
+  .aapb-marca.editable.editing {
+    background-color: rgba(255, 255, 255, 0.98);
+    color: var(--oxford-blue) !important;
+    box-shadow: 0 0 0 2px #ffffff, 0 4px 14px rgba(0,0,0,0.35);
+  }
+
+  /* --- BOTONES ESCUDO (guardar / ver guardados) --- */
+  .boton-guardar,
+  .boton-ver-guardados {
+    cursor: pointer;
+    transition: transform 0.15s ease, filter 0.15s ease;
+  }
+  .boton-guardar:hover {
+    transform: scale(1.06);
+  }
+  .boton-ver-guardados:hover {
+    transform: translateX(-50%) scale(1.05) !important;
+  }
+  .boton-guardar:active {
+    transform: scale(0.95);
+  }
+
+  /* --- TOAST de confirmación de guardado --- */
+  .toast-guardado {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translate(-50%, 20px);
+    background: var(--oxford-blue-deep);
+    color: #ffffff;
+    font-family: 'PT Serif', serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+    padding: 10px 20px;
+    border-radius: 999px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 2000;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+  .toast-guardado.visible {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+
+  /* --- PANTALLA: Documentos guardados --- */
+  #pantalla-guardados {
+    display: none;
+    min-height: 100vh;
+    background: #ffffff;
+    padding: 24px 20px 60px;
+  }
+  .guardados-encabezado {
+    max-width: 760px;
+    margin: 0 auto 20px;
+  }
+  .guardados-volver {
+    font-family: 'PT Serif', serif;
+    font-size: 0.85rem;
+    color: var(--oxford-blue);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px 0;
+    margin-bottom: 10px;
+  }
+  .guardados-volver:hover {
+    text-decoration: underline;
+  }
+  .guardados-encabezado h2 {
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--oxford-blue);
+    font-weight: 700;
+    font-size: 1.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  .guardados-lista {
+    max-width: 760px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .guardados-vacio {
+    font-family: 'PT Serif', serif;
+    color: #666;
+    font-size: 0.92rem;
+    padding: 20px 0;
+  }
+  .guardado-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border: 1px solid rgba(20,49,93,0.15);
+    border-radius: 8px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .guardado-item:hover {
+    background-color: rgba(20,49,93,0.04);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  }
+  .guardado-item-info {
+    min-width: 0;
+  }
+  .guardado-item-titulo {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 700;
+    color: var(--oxford-blue);
+    font-size: 1.02rem;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .guardado-item-fecha {
+    font-family: 'PT Serif', serif;
+    font-size: 0.78rem;
+    color: #666;
+    margin-top: 4px;
+  }
+  .guardado-item-borrar {
+    flex-shrink: 0;
+    font-family: 'PT Serif', serif;
+    font-size: 0.78rem;
+    color: #a33;
+    background: none;
+    border: 1px solid rgba(170,51,51,0.3);
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+  .guardado-item-borrar:hover {
+    background-color: rgba(170,51,51,0.08);
+  }
+
+  /* --- PARCHE DE IMPRESIÓN: fuerza colores/fondos y evita página en blanco extra --- */
+  @media print {
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
+
+    header,
+    .logo-wrap,
+    footer.oficial-footer .banda-azul,
+    footer.oficial-footer .sello-wrap,
+    .marca-agua-arco,
+    .sticky-shield-bg,
+    .sticky-fade-out,
+    #titulo-clon-header {
+      display: none !important;
+    }
+
+    header {
+      display: block !important;
+      position: static !important;
+      background: linear-gradient(180deg, var(--oxford-blue) 0%, var(--oxford-blue-deep) 100%) !important;
+    }
+
+    .logo-wrap {
+      display: grid !important;
+      position: static !important;
+    }
+
+    footer.oficial-footer .banda-azul {
+      display: flex !important;
+      position: static !important;
+      background: linear-gradient(180deg, var(--oxford-blue) 0%, var(--oxford-blue-deep) 100%) !important;
+    }
+
+    footer.oficial-footer .sello-wrap {
+      display: block !important;
+      position: absolute !important;
+      top: auto !important;
+      bottom: -55px !important;
+    }
+
+    .marca-agua-sello {
+      opacity: 0.09 !important;
+      filter: grayscale(1) !important;
+    }
+
+    body {
+      padding-bottom: 0 !important;
+    }
+
+    .titulo-oficial {
+      margin-top: 32px !important;
+    }
+
+    footer.oficial-footer .banda-blanca {
+      padding-bottom: 40px !important;
+    }
+
+    #pantalla-documento {
+      display: block !important;
+    }
+    #pantalla-guardados,
+    .toast-guardado,
+    .boton-guardar,
+    .boton-ver-guardados {
+      display: none !important;
+    }
+  }
 </style>
 </head>
 <body>
 
+<div id="pantalla-documento">
+
 <header>
-  <h1>Agencia Autónoma del Poder Blando</h1>
+  <h1 class="editable" id="campo-header-titulo" spellcheck="false">Agencia Autónoma del Poder Blando</h1>
 </header>
 
 <div class="sticky-shield-bg"></div>
@@ -616,15 +852,15 @@
   <span class="sword-text-group">
     <img class="sword" src="imagen_2.png" alt="Espada de Santiago">
     <span class="directrices-stack">
-      <span class="line1">Departamento de</span><br>
-      <span class="line2">Directrices</span>
+      <span class="line1 editable" id="campo-linea1" spellcheck="false">Departamento de</span><br>
+      <span class="line2 editable" id="campo-linea2" spellcheck="false">Directrices</span>
     </span>
   </span>
-  <img class="shield" src="imagen_3.png" alt="Escudo de la Agencia Autónoma del Poder Blando">
+  <img class="shield boton-guardar" id="btn-guardar-doc" src="imagen_3.png" alt="Guardar documento" title="Guardar este documento">
 <div id="titulo-clon-header" aria-hidden="true"></div>
 </div>
 
-<p class="titulo-oficial">La incorporación de gritas a los ABC demuestran cifras mayores a las administradas</p>
+<p class="titulo-oficial editable" id="campo-titulo-oficial" spellcheck="false">La incorporación de gritas a los ABC demuestran cifras mayores a las administradas</p>
 
 <footer class="oficial-footer">
   
@@ -635,18 +871,18 @@
 </div>
 
 
-<div class="fecha-actual" id="fecha-actual"></div>
+<div class="fecha-actual editable" id="fecha-actual" spellcheck="false"></div>
   <div class="cuerpo-con-marca">
     <div class="marca-agua-sello"><img src="imagen_1.png" alt="marca de agua"></div>
     <div class="contenido-oficial">
-      <p>Detrás de ese poder hay solo 10 personas —ninguna votada por un mexicano—: desde Trump y su secretario del Tesoro, hasta el jefe de la Reserva Federal, el CEO de JPMorgan y el de BlackRock, más los líderes de China, Rusia, India y Brasil, cuya decisiones sobre tasas, sanciones, comercio y flujos de capital mueven el peso sin que México tenga voto en la mesa. Ni el FMI, ni el Banco de Pagos Internacionales, ni la OMC cambian eso: México los sigue, no los dirige.</p>
+      <p class="editable" id="campo-contenido" spellcheck="false">Detrás de ese poder hay solo 10 personas —ninguna votada por un mexicano—: desde Trump y su secretario del Tesoro, hasta el jefe de la Reserva Federal, el CEO de JPMorgan y el de BlackRock, más los líderes de China, Rusia, India y Brasil, cuya decisiones sobre tasas, sanciones, comercio y flujos de capital mueven el peso sin que México tenga voto en la mesa. Ni el FMI, ni el Banco de Pagos Internacionales, ni la OMC cambian eso: México los sigue, no los dirige.</p>
     </div>
     <div class="firma-bloque">
       <div class="firma-img-wrap">
         <img src="imagen_5.png" alt="Firma Bruno Hernández">
       </div>
       <div class="firma-linea"></div>
-      <div class="firma-texto">
+      <div class="firma-texto editable" id="campo-firma" spellcheck="false">
         Coordinador de<br>Lineamientos Estratégicos<br><strong>Bruno Hernández</strong>
       </div>
     </div>
@@ -654,14 +890,26 @@
 
 </div>
 
-  <div class="banda-azul"><div class="aapb-marca">AAPB</div></div>
-  <div class="sello-wrap">
-    <img class="shield" src="imagen_6.png" alt="Sello oficial">
+  <div class="banda-azul"><div class="aapb-marca editable" id="campo-aapb" spellcheck="false">AAPB</div></div>
+  <div class="sello-wrap boton-ver-guardados" id="btn-ver-guardados" title="Ver documentos guardados">
+    <img class="shield" src="imagen_6.png" alt="Sello oficial - ver guardados">
   </div>
 </footer>
 
 
 <div class="marca-agua-arco"><img src="imagen_7.png" alt="ornamento arco"></div>
+
+</div>
+
+<div id="pantalla-guardados">
+  <div class="guardados-encabezado">
+    <button type="button" id="btn-volver-doc" class="guardados-volver">&larr; Volver al documento</button>
+    <h2>Documentos guardados</h2>
+  </div>
+  <div id="guardados-lista" class="guardados-lista"></div>
+</div>
+
+<div id="toast-guardado" class="toast-guardado">Documento guardado</div>
 
 
 <script>
@@ -740,6 +988,10 @@
   if(!TITULO_TEXTO || !clone) return;
   // Copiar texto del TITULO original (preservando el contenido exacto)
   clone.textContent = TITULO_TEXTO.textContent.trim();
+  // Si el título es editado a mano, mantener el clon sincronizado
+  TITULO_TEXTO.addEventListener('input', () => {
+    clone.textContent = TITULO_TEXTO.textContent.trim();
+  });
 
   // Función para decidir visibilidad
   const check = () => {
@@ -786,6 +1038,284 @@
   window.addEventListener('resize', check);
   // Check inicial
   setTimeout(check, 200);
+})();
+</script>
+
+<script>
+(function(){
+  // --- Activar edición con doble clic / doble toque ---
+  const editables = document.querySelectorAll('.editable');
+
+  function selectAllText(el){
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+
+  function enterEdit(el){
+    if (el.getAttribute('contenteditable') === 'true') return;
+    el.setAttribute('contenteditable', 'true');
+    el.classList.add('editing');
+    el.focus();
+    selectAllText(el);
+  }
+
+  function exitEdit(el){
+    el.setAttribute('contenteditable', 'false');
+    el.classList.remove('editing');
+  }
+
+  editables.forEach(el => {
+    el.setAttribute('contenteditable', 'false');
+
+    // Doble clic (mouse, escritorio)
+    el.addEventListener('dblclick', (e) => {
+      e.preventDefault();
+      enterEdit(el);
+    });
+
+    // Doble toque manual (móvil, por si el navegador no dispara dblclick)
+    let lastTap = 0;
+    el.addEventListener('touchend', () => {
+      const now = Date.now();
+      if (now - lastTap < 350) {
+        enterEdit(el);
+      }
+      lastTap = now;
+    });
+
+    // Salir del modo edición al tocar fuera
+    el.addEventListener('blur', () => exitEdit(el));
+
+    // Enter cierra la edición en campos de una sola línea (título del header, fecha, AAPB)
+    if (!el.classList.contains('titulo-oficial') &&
+        !el.classList.contains('firma-texto') &&
+        el.tagName !== 'P') {
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          el.blur();
+        }
+      });
+    }
+  });
+})();
+</script>
+
+<script>
+(function(){
+  // ============================================================
+  // PERSISTENCIA EN localStorage
+  //   - "aapb_borrador"  -> guarda automáticamente cada cambio,
+  //     sobrevive a cerrar la pestaña / navegador.
+  //   - "aapb_guardados" -> lista de documentos guardados a mano
+  //     con el escudo de arriba, visibles en la pantalla que abre
+  //     el sello de abajo.
+  // ============================================================
+
+  const CLAVE_BORRADOR = 'aapb_borrador';
+  const CLAVE_GUARDADOS = 'aapb_guardados';
+
+  // IDs de todos los campos editables del documento
+  const IDS_CAMPOS = [
+    'campo-header-titulo',
+    'campo-linea1',
+    'campo-linea2',
+    'campo-titulo-oficial',
+    'fecha-actual',
+    'campo-contenido',
+    'campo-firma',
+    'campo-aapb'
+  ];
+
+  function tomarFoto() {
+    const foto = {};
+    IDS_CAMPOS.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) foto[id] = el.innerHTML;
+    });
+    return foto;
+  }
+
+  function aplicarFoto(foto) {
+    if (!foto) return;
+    IDS_CAMPOS.forEach(id => {
+      const el = document.getElementById(id);
+      if (el && typeof foto[id] === 'string') el.innerHTML = foto[id];
+    });
+    // Sincronizar el clon del título en el header y el estado de fecha sticky
+    const tituloOriginal = document.querySelector('.titulo-oficial');
+    const clon = document.getElementById('titulo-clon-header');
+    if (tituloOriginal && clon) clon.textContent = tituloOriginal.textContent.trim();
+  }
+
+  // --- Autoguardado del borrador (persiste aunque cierres la pestaña) ---
+  let temporizadorGuardado = null;
+  function guardarBorrador() {
+    try {
+      localStorage.setItem(CLAVE_BORRADOR, JSON.stringify(tomarFoto()));
+    } catch (e) {
+      console.warn('No se pudo guardar el borrador automático:', e);
+    }
+  }
+  function guardarBorradorConRetraso() {
+    clearTimeout(temporizadorGuardado);
+    temporizadorGuardado = setTimeout(guardarBorrador, 400);
+  }
+
+  function restaurarBorrador() {
+    try {
+      const raw = localStorage.getItem(CLAVE_BORRADOR);
+      if (raw) aplicarFoto(JSON.parse(raw));
+    } catch (e) {
+      console.warn('No se pudo restaurar el borrador:', e);
+    }
+  }
+
+  // Escuchar cualquier edición dentro de los campos y guardar sola
+  IDS_CAMPOS.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', guardarBorradorConRetraso);
+    el.addEventListener('blur', guardarBorrador);
+  });
+
+  // Redes de seguridad: guarda al cambiar de pestaña, minimizar o cerrar
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') guardarBorrador();
+  });
+  window.addEventListener('pagehide', guardarBorrador);
+  window.addEventListener('beforeunload', guardarBorrador);
+
+  // Restaurar el último estado en cuanto carga la página
+  // (después de que el script de la fecha ya puso la fecha de hoy,
+  // por si el borrador trae una fecha editada a mano la respeta)
+  setTimeout(restaurarBorrador, 0);
+
+  // --- Guardar como documento nuevo en la lista (escudo de arriba) ---
+  function obtenerGuardados() {
+    try {
+      return JSON.parse(localStorage.getItem(CLAVE_GUARDADOS) || '[]');
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function mostrarToast(mensaje) {
+    const toast = document.getElementById('toast-guardado');
+    if (!toast) return;
+    toast.textContent = mensaje;
+    toast.classList.add('visible');
+    clearTimeout(toast._timeout);
+    toast._timeout = setTimeout(() => toast.classList.remove('visible'), 2200);
+  }
+
+  function guardarComoNuevo() {
+    guardarBorrador(); // asegura que el borrador también quede al día
+    const lista = obtenerGuardados();
+    const campoTitulo = document.getElementById('campo-titulo-oficial');
+    const tituloTexto = campoTitulo ? campoTitulo.textContent.trim() : '';
+    const entrada = {
+      id: Date.now(),
+      titulo: tituloTexto ? tituloTexto.slice(0, 90) : 'Documento sin título',
+      fechaGuardado: new Date().toLocaleString('es-MX', {
+        day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+      }),
+      campos: tomarFoto()
+    };
+    lista.unshift(entrada);
+    localStorage.setItem(CLAVE_GUARDADOS, JSON.stringify(lista));
+    mostrarToast('Documento guardado');
+  }
+
+  const btnGuardar = document.getElementById('btn-guardar-doc');
+  if (btnGuardar) {
+    btnGuardar.addEventListener('click', guardarComoNuevo);
+  }
+
+  // --- Pantalla de documentos guardados (sello de abajo) ---
+  const pantallaDocumento = document.getElementById('pantalla-documento');
+  const pantallaGuardados = document.getElementById('pantalla-guardados');
+  const listaGuardados = document.getElementById('guardados-lista');
+
+  function renderizarLista() {
+    if (!listaGuardados) return;
+    const lista = obtenerGuardados();
+    listaGuardados.innerHTML = '';
+
+    if (lista.length === 0) {
+      const vacio = document.createElement('div');
+      vacio.className = 'guardados-vacio';
+      vacio.textContent = 'Todavía no has guardado ningún documento. Toca el escudo de arriba para guardar el actual.';
+      listaGuardados.appendChild(vacio);
+      return;
+    }
+
+    lista.forEach(entrada => {
+      const item = document.createElement('div');
+      item.className = 'guardado-item';
+
+      const info = document.createElement('div');
+      info.className = 'guardado-item-info';
+
+      const titulo = document.createElement('div');
+      titulo.className = 'guardado-item-titulo';
+      titulo.textContent = entrada.titulo || 'Documento sin título';
+
+      const fecha = document.createElement('div');
+      fecha.className = 'guardado-item-fecha';
+      fecha.textContent = entrada.fechaGuardado || '';
+
+      info.appendChild(titulo);
+      info.appendChild(fecha);
+
+      const borrar = document.createElement('button');
+      borrar.type = 'button';
+      borrar.className = 'guardado-item-borrar';
+      borrar.textContent = 'Eliminar';
+      borrar.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const nuevaLista = obtenerGuardados().filter(x => x.id !== entrada.id);
+        localStorage.setItem(CLAVE_GUARDADOS, JSON.stringify(nuevaLista));
+        renderizarLista();
+      });
+
+      item.addEventListener('click', () => {
+        aplicarFoto(entrada.campos);
+        guardarBorrador();
+        irAPantalla('documento');
+      });
+
+      item.appendChild(info);
+      item.appendChild(borrar);
+      listaGuardados.appendChild(item);
+    });
+  }
+
+  function irAPantalla(nombre) {
+    if (nombre === 'guardados') {
+      renderizarLista();
+      if (pantallaDocumento) pantallaDocumento.style.display = 'none';
+      if (pantallaGuardados) pantallaGuardados.style.display = 'block';
+      window.scrollTo(0, 0);
+    } else {
+      if (pantallaGuardados) pantallaGuardados.style.display = 'none';
+      if (pantallaDocumento) pantallaDocumento.style.display = 'block';
+      window.scrollTo(0, 0);
+    }
+  }
+
+  const btnVerGuardados = document.getElementById('btn-ver-guardados');
+  if (btnVerGuardados) {
+    btnVerGuardados.addEventListener('click', () => irAPantalla('guardados'));
+  }
+
+  const btnVolverDoc = document.getElementById('btn-volver-doc');
+  if (btnVolverDoc) {
+    btnVolverDoc.addEventListener('click', () => irAPantalla('documento'));
+  }
 })();
 </script>
 
