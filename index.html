@@ -544,128 +544,58 @@
     z-index: 1 !important;
   }
 
-  /* --- Botón Descargar PDF --- */
-  .btn-pdf {
-    position: fixed;
-    top: 50%;
-    right: 16px;
-    transform: translateY(-50%);
-    z-index: 2000;
-    background: var(--oxford-blue);
-    color: #ffffff;
-    border: none;
-    padding: 12px 18px;
-    border-radius: 8px;
-    font-family: 'PT Serif', 'Times New Roman', Times, serif;
-    font-size: 0.85rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    cursor: pointer;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: background 0.2s ease;
-  }
-  .btn-pdf:hover {
-    background: var(--oxford-blue-deep);
-  }
-  @media (max-width: 600px) {
-    .btn-pdf {
-      right: 10px;
-      padding: 10px 14px;
-      font-size: 0.72rem;
+  /* --- FIX ESPACIO EN BLANCO EN COMPUTADORAS ---
+     En pantallas anchas (escritorio) el pie con position:fixed queda
+     pegado al fondo real de la ventana del navegador, y como esa
+     ventana suele ser mucho más alta que el contenido, se genera un
+     hueco en blanco enorme entre la firma y la franja azul AAPB.
+     Aquí el pie y el encabezado pasan a flujo normal (justo después
+     del contenido) sólo en pantallas de computadora, sin tocar el
+     comportamiento en celular. */
+  @media (min-width: 768px) {
+    header {
+      position: static !important;
     }
-  }
-
-  /* --- Estilos de impresión de respaldo (Ctrl+P / imprimir manual) ---
-     El botón genera el PDF por JavaScript (ver más abajo), que es el
-     método principal y confiable. Esto solo es un respaldo simple por
-     si el navegador no puede ejecutar el script. */
-  @media print {
-    .no-print,
-    .pdf-capture {
+    .logo-wrap {
+      position: static !important;
+      box-shadow: none !important;
+    }
+    .sticky-shield-bg,
+    .sticky-fade-out,
+    #titulo-clon-header {
       display: none !important;
     }
-
-    * {
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-      color-adjust: exact !important;
+    .titulo-oficial {
+      margin-top: 32px !important;
     }
-
-    @page {
-      size: letter;
-      margin: 0.4in;
+    body {
+      padding-bottom: 0 !important;
     }
-  }
-
-  /* ============================================================
-     Plantilla oculta usada SOLO para armar el PDF por JavaScript.
-     Aísla el encabezado, el contenido y el pie de los estilos
-     "fixed / sticky" pensados para la vista en pantalla, para que
-     cada bloque se capture "plano" y ordenado, sin encimarse.
-     ============================================================ */
-  .pdf-capture {
-    position: fixed !important;
-    left: -99999px !important;
-    top: 0 !important;
-    background: #ffffff !important;
-  }
-
-  .pdf-capture header {
-    position: static !important;
-  }
-
-  .pdf-capture .logo-wrap {
-    position: static !important;
-    top: auto !important;
-    box-shadow: none !important;
-  }
-
-  .pdf-capture .logo-wrap::after {
-    display: none !important;
-  }
-
-  .pdf-capture .titulo-oficial {
-    position: static !important;
-    margin: 16px 24px 8px !important;
-    padding: 0 !important;
-    max-width: none !important;
-  }
-
-  .pdf-capture .banda-blanca {
-    max-width: none !important;
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 0 24px 14px !important;
-  }
-
-  .pdf-capture .fecha-actual {
-    position: static !important;
-    margin: 0 0 10px auto !important;
-  }
-
-  .pdf-capture #tres-figuras-sticky {
-    position: static !important;
-    margin: 0 auto 10px auto !important;
-  }
-
-  .pdf-capture .pdf-footer-inner {
-    position: relative !important;
-    width: 100% !important;
-    height: 205px !important;
-  }
-
-  .pdf-capture .pdf-footer-inner .banda-azul,
-  .pdf-capture .pdf-footer-inner .sello-wrap {
-    position: absolute !important;
+    footer.oficial-footer .banda-blanca {
+      padding-bottom: 40px !important;
+    }
+    footer.oficial-footer .banda-azul {
+      position: static !important;
+      height: 140px !important;
+    }
+    footer.oficial-footer .sello-wrap {
+      position: absolute !important;
+      top: auto !important;
+      bottom: -55px !important;
+    }
+    .marca-agua-arco {
+      display: none !important;
+    }
+    .fecha-actual,
+    #tres-figuras-sticky {
+      position: relative !important;
+      top: auto !important;
+    }
   }
 
 </style>
 </head>
 <body>
-<button class="btn-pdf no-print" id="btn-pdf" onclick="generarPDF()" title="Descargar como PDF">⬇ Descargar PDF</button>
 <div class="marca-agua-sello"><img src="imagen_1.png" alt="marca de agua"></div>
 
 
@@ -852,175 +782,5 @@
 })();
 </script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script>
-/* ============================================================
-   Generación del PDF con JavaScript.
-   En vez de depender de la impresión del navegador (que en varios
-   celulares no repite bien el encabezado/pie), armamos el PDF a
-   mano: capturamos el encabezado, el pie y el contenido por
-   separado, y los vamos colocando hoja por hoja. Si todo cabe en
-   una hoja, se genera solo una; si el texto es largo, se agregan
-   más hojas repitiendo el mismo encabezado y pie, con el título
-   en tamaño chico como referencia.
-   ============================================================ */
-async function generarPDF() {
-  const btn = document.getElementById('btn-pdf');
-  if (!btn) return;
-  const originalHTML = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = '⏳ Generando…';
-
-  const PAGE_W = 612;   // pt (Carta, 8.5in)
-  const PAGE_H = 792;   // pt (Carta, 11in)
-  const SCALE = 2;      // resolución de captura
-  const TOP_GAP = 12;
-  const BOTTOM_GAP = 12;
-  const SMALL_TITLE_H = 22;
-
-  let stage;
-  try {
-    if (!window.jspdf || !window.html2canvas) {
-      throw new Error('Librerías no disponibles');
-    }
-    const { jsPDF } = window.jspdf;
-
-    // --- 1. Armar la plantilla oculta y "plana" ---
-    stage = document.createElement('div');
-    stage.className = 'pdf-capture';
-    stage.style.width = PAGE_W + 'px';
-
-    // Encabezado
-    const headerWrap = document.createElement('div');
-    headerWrap.style.width = PAGE_W + 'px';
-    const headerClone = document.querySelector('header').cloneNode(true);
-    const logoClone = document.querySelector('.logo-wrap').cloneNode(true);
-    const cloneTitulo = logoClone.querySelector('#titulo-clon-header');
-    if (cloneTitulo) cloneTitulo.remove();
-    headerWrap.appendChild(headerClone);
-    headerWrap.appendChild(logoClone);
-    stage.appendChild(headerWrap);
-
-    // Pie (banda azul + sello)
-    const footerWrap = document.createElement('div');
-    footerWrap.className = 'pdf-footer-inner';
-    const bandaAzulClone = document.querySelector('.banda-azul').cloneNode(true);
-    const selloClone = document.querySelector('.sello-wrap').cloneNode(true);
-    footerWrap.appendChild(bandaAzulClone);
-    footerWrap.appendChild(selloClone);
-    stage.appendChild(footerWrap);
-
-    // Contenido (título + banda blanca)
-    const contentWrap = document.createElement('div');
-    contentWrap.style.width = PAGE_W + 'px';
-    const tituloClone = document.querySelector('.titulo-oficial').cloneNode(true);
-    const bandaBlancaClone = document.querySelector('.banda-blanca').cloneNode(true);
-    bandaBlancaClone.querySelectorAll('.is-fixed').forEach(el => el.classList.remove('is-fixed'));
-    contentWrap.appendChild(tituloClone);
-    contentWrap.appendChild(bandaBlancaClone);
-    stage.appendChild(contentWrap);
-
-    document.body.appendChild(stage);
-
-    // --- 2. Capturar cada bloque ---
-    const opts = { scale: SCALE, backgroundColor: '#ffffff', useCORS: true, logging: false };
-    const headerCanvas = await html2canvas(headerWrap, opts);
-    const footerCanvas = await html2canvas(footerWrap, opts);
-    const contentCanvas = await html2canvas(contentWrap, opts);
-
-    document.body.removeChild(stage);
-    stage = null;
-
-    // --- 3. Medidas ---
-    const headerHPt = headerCanvas.height / SCALE;
-    const footerHPt = footerCanvas.height / SCALE;
-    const availPage1 = PAGE_H - headerHPt - footerHPt - TOP_GAP - BOTTOM_GAP;
-    const availContPages = availPage1 - SMALL_TITLE_H;
-    const tituloTexto = document.querySelector('.titulo-oficial').textContent.trim();
-
-    // Busca una fila casi en blanco cerca del corte ideal, para no
-    // partir el texto justo a la mitad de una línea.
-    function findSafeBreak(canvas, idealY, rangePx) {
-      try {
-        const ctx = canvas.getContext('2d');
-        const w = canvas.width;
-        const from = Math.max(0, idealY - rangePx);
-        const to = Math.min(canvas.height, idealY + rangePx);
-        let bestY = idealY, bestScore = Infinity;
-        for (let y = from; y < to; y += 3) {
-          const row = ctx.getImageData(0, y, w, 1).data;
-          let ink = 0;
-          for (let i = 0; i < row.length; i += 16) {
-            ink += (255 - row[i]) + (255 - row[i + 1]) + (255 - row[i + 2]);
-          }
-          if (ink < bestScore) { bestScore = ink; bestY = y; }
-        }
-        return bestY;
-      } catch (e) {
-        return idealY;
-      }
-    }
-
-    // --- 4. Ensamblar el PDF ---
-    const pdf = new jsPDF({ unit: 'pt', format: 'letter' });
-    const headerImg = headerCanvas.toDataURL('image/png');
-    const footerImg = footerCanvas.toDataURL('image/png');
-
-    let sourceY = 0;
-    let pageIndex = 0;
-    const totalPx = contentCanvas.height;
-
-    while (sourceY < totalPx - 1) {
-      pageIndex++;
-      const availPt = pageIndex === 1 ? availPage1 : availContPages;
-      let sliceHpx = Math.min(availPt * SCALE, totalPx - sourceY);
-      let sliceEnd = sourceY + sliceHpx;
-      if (sliceEnd < totalPx) {
-        sliceEnd = findSafeBreak(contentCanvas, sliceEnd, 45 * SCALE);
-        sliceHpx = Math.max(20, sliceEnd - sourceY);
-      }
-
-      const sliceCanvas = document.createElement('canvas');
-      sliceCanvas.width = contentCanvas.width;
-      sliceCanvas.height = sliceHpx;
-      sliceCanvas.getContext('2d').drawImage(
-        contentCanvas, 0, sourceY, contentCanvas.width, sliceHpx,
-        0, 0, contentCanvas.width, sliceHpx
-      );
-      const sliceImg = sliceCanvas.toDataURL('image/png');
-      const sliceHPt = sliceHpx / SCALE;
-
-      if (pageIndex > 1) pdf.addPage();
-
-      pdf.addImage(headerImg, 'PNG', 0, 0, PAGE_W, headerHPt);
-
-      let y = headerHPt + TOP_GAP;
-      if (pageIndex > 1) {
-        pdf.setFont('times', 'bold');
-        pdf.setFontSize(10);
-        pdf.setTextColor(20, 49, 93);
-        pdf.text(tituloTexto, 24, y + 10, { maxWidth: PAGE_W - 48 });
-        y += SMALL_TITLE_H;
-      }
-
-      pdf.addImage(sliceImg, 'PNG', 0, y, PAGE_W, sliceHPt);
-      pdf.addImage(footerImg, 'PNG', 0, PAGE_H - footerHPt, PAGE_W, footerHPt);
-
-      sourceY += sliceHpx;
-    }
-
-    pdf.save('AAPB-directrices.pdf');
-  } catch (err) {
-    console.error('Error generando PDF:', err);
-    if (stage && stage.parentNode) document.body.removeChild(stage);
-    alert('No se pudo generar el PDF automáticamente. Se abrirá la vista de impresión como alternativa.');
-    window.print();
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = originalHTML;
-  }
-}
-</script>
 </body>
 </html>
