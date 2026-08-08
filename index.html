@@ -4,6 +4,35 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AAPB: Agencia Autónoma del Poder Blando</title>
+
+<!-- SEO básico -->
+<meta name="description" content="Agencia Autónoma del Poder Blando (AAPB): organización civil independiente para el ejercicio legítimo del poder blando en la vida política, diplomática y económica.">
+<meta name="keywords" content="AAPB, poder blando, soft power, sociedad civil, diplomacia ciudadana, participación política">
+<meta name="author" content="Agencia Autónoma del Poder Blando">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://www.myagencygov.org/">
+
+<!-- Favicon / iconos -->
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="apple-touch-icon" href="logo.png">
+<meta name="theme-color" content="#14315D">
+
+<!-- Open Graph (Facebook, WhatsApp, LinkedIn, etc.) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AAPB: Agencia Autónoma del Poder Blando">
+<meta property="og:title" content="AAPB: Agencia Autónoma del Poder Blando">
+<meta property="og:description" content="El poder de influir es un derecho humano. Ejercemos el poder blando como instrumento legítimo de participación democrática, sin necesidad de cargo público ni partido político.">
+<meta property="og:image" content="https://www.myagencygov.org/logo.png">
+<meta property="og:image:alt" content="Sello institucional de la AAPB">
+<meta property="og:url" content="https://www.myagencygov.org/">
+<meta property="og:locale" content="es_MX">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AAPB: Agencia Autónoma del Poder Blando">
+<meta name="twitter:description" content="El poder de influir es un derecho humano. Organización civil independiente para la participación democrática.">
+<meta name="twitter:image" content="https://www.myagencygov.org/logo.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=PT+Serif:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -1024,7 +1053,7 @@ body {
      TOPBAR / NAV
      ============================================= -->
 <header id="topbar" role="banner">
-  <a href="#" class="brand" onclick="showSection('inicio'); return false;">
+  <a href="/" class="brand" onclick="navigate('inicio'); return false;">
     <div class="seal-mini"><img src="logo.png" alt="Sello AAPB"></div>
     <div class="brand-text">
       <span class="sigla">AAPB</span>
@@ -1034,12 +1063,12 @@ body {
 
   <nav aria-label="Navegación principal">
     <ul id="nav-links">
-      <li><a href="#" class="nav-link active" data-section="inicio">Inicio</a></li>
-      <li><a href="#" class="nav-link" data-section="conocenos">Conócenos</a></li>
-      <li><a href="#" class="nav-link" data-section="lineamientos">Lineamientos</a></li>
-      <li><a href="#" class="nav-link" data-section="avisos">Avisos</a></li>
-      <li><a href="#" class="nav-link" data-section="contacto">Contáctanos</a></li>
-      <li><a href="#" class="nav-link" data-section="legal">Legal</a></li>
+      <li><a href="/" class="nav-link active" data-section="inicio">Inicio</a></li>
+      <li><a href="/conocenos/" class="nav-link" data-section="conocenos">Conócenos</a></li>
+      <li><a href="/lineamientos/" class="nav-link" data-section="lineamientos">Lineamientos</a></li>
+      <li><a href="/avisos/" class="nav-link" data-section="avisos">Avisos</a></li>
+      <li><a href="/contacto/" class="nav-link" data-section="contacto">Contáctanos</a></li>
+      <li><a href="/legal/" class="nav-link" data-section="legal">Legal</a></li>
     </ul>
     <button id="ham" aria-label="Abrir menú" aria-expanded="false">
       <span></span><span></span><span></span>
@@ -1049,12 +1078,12 @@ body {
 
 <!-- Drawer móvil -->
 <nav id="nav-drawer" aria-label="Menú móvil" aria-hidden="true">
-  <a href="#" class="nav-link active" data-section="inicio">Inicio</a>
-  <a href="#" class="nav-link" data-section="conocenos">Conócenos</a>
-  <a href="#" class="nav-link" data-section="lineamientos">Lineamientos</a>
-  <a href="#" class="nav-link" data-section="avisos">Avisos</a>
-  <a href="#" class="nav-link" data-section="contacto">Contáctanos</a>
-  <a href="#" class="nav-link" data-section="legal">Legal</a>
+  <a href="/" class="nav-link active" data-section="inicio">Inicio</a>
+  <a href="/conocenos/" class="nav-link" data-section="conocenos">Conócenos</a>
+  <a href="/lineamientos/" class="nav-link" data-section="lineamientos">Lineamientos</a>
+  <a href="/avisos/" class="nav-link" data-section="avisos">Avisos</a>
+  <a href="/contacto/" class="nav-link" data-section="contacto">Contáctanos</a>
+  <a href="/legal/" class="nav-link" data-section="legal">Legal</a>
 </nav>
 
 <!-- =============================================
@@ -1075,8 +1104,8 @@ body {
       sin necesidad de cargo público ni partido político.
     </p>
     <div class="hero-cta-row">
-      <button class="btn btn-navy" onclick="showSection('conocenos')">Conocer la agencia</button>
-      <button class="btn btn-outline-navy" onclick="showSection('legal')">Marco legal</button>
+      <button class="btn btn-navy" onclick="navigate('conocenos')">Conocer la agencia</button>
+      <button class="btn btn-outline-navy" onclick="navigate('legal')">Marco legal</button>
     </div>
 
   </div>
@@ -1186,11 +1215,11 @@ body {
       </div>
       <div class="footer-col">
         <h4>Secciones</h4>
-        <a href="#" onclick="showSection('conocenos');return false;">Conócenos</a>
-        <a href="#" onclick="showSection('lineamientos');return false;">Lineamientos</a>
-        <a href="#" onclick="showSection('avisos');return false;">Avisos</a>
-        <a href="#" onclick="showSection('contacto');return false;">Contáctanos</a>
-        <a href="#" onclick="showSection('legal');return false;">Legal</a>
+        <a href="/conocenos/" onclick="navigate('conocenos');return false;">Conócenos</a>
+        <a href="/lineamientos/" onclick="navigate('lineamientos');return false;">Lineamientos</a>
+        <a href="/avisos/" onclick="navigate('avisos');return false;">Avisos</a>
+        <a href="/contacto/" onclick="navigate('contacto');return false;">Contáctanos</a>
+        <a href="/legal/" onclick="navigate('legal');return false;">Legal</a>
       </div>
       <div class="footer-col">
         <h4>Marco legal</h4>
@@ -1235,7 +1264,7 @@ body {
             política, nivel socioeconómico o cargo institucional.
           </p>
           <div style="margin-top:1.25rem;">
-            <button class="btn btn-dark" onclick="showSection('lineamientos')">Ver lineamientos →</button>
+            <button class="btn btn-dark" onclick="navigate('lineamientos')">Ver lineamientos →</button>
           </div>
         </div>
         <div class="reveal reveal-delay-1">
@@ -1921,26 +1950,65 @@ body {
      JAVASCRIPT
      ============================================= -->
 <script>
-// ── Navegación entre secciones ───────────────────────────────
+// ── Mapa de rutas: URL <-> sección ───────────────────────────
+const ROUTES = {
+  ''            : 'inicio',
+  'inicio'      : 'inicio',
+  'conocenos'   : 'conocenos',
+  'lineamientos': 'lineamientos',
+  'avisos'      : 'avisos',
+  'contacto'    : 'contacto',
+  'legal'       : 'legal'
+};
+const SITE_ORIGIN = 'https://www.myagencygov.org';
+
+// ── Navegación entre secciones (uso interno, sin togocar la URL) ─
 function showSection(id) {
-  // Ocultar todas
   document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
-  // Mostrar la elegida
   const target = document.getElementById('sec-' + id);
   if (target) {
     target.classList.add('active');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
-  // Actualizar nav links (topbar + drawer)
   document.querySelectorAll('.nav-link').forEach(a => {
     a.classList.remove('active');
     if (a.dataset.section === id) a.classList.add('active');
   });
-  // Cerrar drawer móvil
   closeDrawer();
-  // Trigger reveal para la nueva sección
   setTimeout(observeReveal, 100);
+
+  // Actualiza <link rel="canonical"> y Open Graph dinámicamente
+  const path = id === 'inicio' ? '/' : '/' + id + '/';
+  const canonical = document.querySelector('link[rel="canonical"]');
+  if (canonical) canonical.href = SITE_ORIGIN + path;
+  const ogUrl = document.querySelector('meta[property="og:url"]');
+  if (ogUrl) ogUrl.setAttribute('content', SITE_ORIGIN + path);
 }
+
+// ── Navegación pública: cambia sección Y actualiza la URL ────
+function navigate(id) {
+  showSection(id);
+  const path = id === 'inicio' ? '/' : '/' + id + '/';
+  if (window.location.pathname !== path) {
+    history.pushState({ section: id }, '', path);
+  }
+}
+
+// Detecta la sección a partir de la URL actual
+function sectionFromPath() {
+  const segment = window.location.pathname.replace(/^\/|\/$/g, ''); // quita "/" al inicio/final
+  return ROUTES[segment.toLowerCase()] || 'inicio';
+}
+
+// Al cargar la página: mostrar la sección correcta según la URL
+window.addEventListener('DOMContentLoaded', () => {
+  showSection(sectionFromPath());
+});
+
+// Botones atrás/adelante del navegador
+window.addEventListener('popstate', (e) => {
+  showSection(e.state?.section || sectionFromPath());
+});
 
 // ── Menú hamburguesa ─────────────────────────────────────────
 const ham    = document.getElementById('ham');
@@ -1960,11 +2028,11 @@ ham.addEventListener('click', () => {
   drawer.setAttribute('aria-hidden', String(!open));
 });
 
-// Click en nav links (topbar y drawer)
+// Click en nav links (topbar y drawer) — usa navigate() para actualizar la URL
 document.querySelectorAll('.nav-link').forEach(a => {
   a.addEventListener('click', e => {
     e.preventDefault();
-    showSection(a.dataset.section);
+    navigate(a.dataset.section);
   });
 });
 
@@ -2041,4 +2109,3 @@ observeReveal();
 </script>
 </body>
 </html>
-
