@@ -150,20 +150,26 @@
     background: linear-gradient(180deg, var(--oxford-blue) 0%, var(--oxford-blue-deep) 100%);
     height: 200px;
     flex-shrink: 0;
+    position: relative; /* ancla al sello, que ahora vive dentro de esta banda */
   }
 
+  /* Sello: hermano entre banda-blanca y banda-azul, dentro del footer
+     (position:relative). Se posiciona absolute relativo al footer, pero
+     su top se calcula dinámicamente por JS para siempre quedar centrado
+     en el borde superior de la banda-azul, sea fija (móvil) o estática
+     (computadora). El valor por defecto cubre el caso estático. */
   footer.oficial-footer .sello-wrap {
     position: absolute;
-    bottom: 145px; /* anclado al borde superior de la banda azul: 200 - 55 */
     left: 50%;
     transform: translateX(-50%);
-    z-index: 2;
+    z-index: 1010;
     width: 110px;
     height: 110px;
     border-radius: 50%;
     overflow: hidden;
     background: #ffffff;
     filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25));
+    /* top se inyecta por JS */
   }
 
   footer.oficial-footer .sello-wrap img.shield {
@@ -228,21 +234,13 @@
     margin-top: 145px !important;
   }
 
-  /* Bottom fijo - banda azul y sello */
+  /* Bottom fijo - banda azul (el sello, al ser hijo suyo, se mueve con ella) */
   footer.oficial-footer .banda-azul {
     position: fixed !important;
     bottom: 0 !important;
     left: 0 !important;
     width: 100% !important;
     z-index: 1001 !important;
-  }
-
-  footer.oficial-footer .sello-wrap {
-    position: fixed !important;
-    bottom: 145px !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    z-index: 1002 !important;
   }
 
   /* Ajustar banda blanca para que no se oculte detrás del bottom fijo */
@@ -626,14 +624,9 @@
       padding-bottom: 40px !important;
     }
     footer.oficial-footer .banda-azul {
-      position: static !important;
+      position: relative !important;
       height: auto !important;
       min-height: 140px !important;
-    }
-    footer.oficial-footer .sello-wrap {
-      position: absolute !important;
-      top: auto !important;
-      bottom: -55px !important;
     }
     .marca-agua-arco {
       display: none !important;
@@ -841,15 +834,12 @@
 
     footer.oficial-footer .banda-azul {
       display: flex !important;
-      position: static !important;
+      position: relative !important;
       background: linear-gradient(180deg, var(--oxford-blue) 0%, var(--oxford-blue-deep) 100%) !important;
     }
 
     footer.oficial-footer .sello-wrap {
       display: block !important;
-      position: absolute !important;
-      top: auto !important;
-      bottom: -55px !important;
     }
 
     .marca-agua-sello {
@@ -935,12 +925,13 @@
 
 </div>
 
+  <div class="sello-wrap boton-ver-guardados" id="btn-ver-guardados" title="Ver documentos guardados">
+    <img class="shield" src="imagen_6.png" alt="Sello oficial - ver guardados">
+  </div>
+
   <div class="banda-azul">
     <div class="aapb-marca editable" id="campo-aapb" spellcheck="false">AAPB</div>
     <a href="https://www.myagencygov.org/lineamientos/" class="enlace-lineamientos" id="enlace-lineamientos">www.myagencygov.org/lineamientos/</a>
-  </div>
-  <div class="sello-wrap boton-ver-guardados" id="btn-ver-guardados" title="Ver documentos guardados">
-    <img class="shield" src="imagen_6.png" alt="Sello oficial - ver guardados">
   </div>
 </footer>
 
@@ -1190,6 +1181,51 @@
   if (document.fonts && document.fonts.ready) {
     document.fonts.ready.then(ajustarMarcaAgua);
   }
+})();
+</script>
+
+<script>
+(function(){
+  // --- Posicionamiento dinámico del sello ---
+  // El sello (position:absolute dentro del footer position:relative) debe
+  // quedar centrado en el borde superior de la banda-azul.
+  // En móvil la banda-azul es fixed (bottom:0), así que calculamos a cuántos
+  // px desde el top del footer queda ese borde.
+  // En escritorio la banda-azul es static, por lo que usamos su offsetTop.
+  function posicionarSello() {
+    const sello = document.getElementById('btn-ver-guardados');
+    const footer = document.querySelector('footer.oficial-footer');
+    const bandaAzul = footer ? footer.querySelector('.banda-azul') : null;
+    if (!sello || !footer || !bandaAzul) return;
+
+    const esFixed = getComputedStyle(bandaAzul).position === 'fixed';
+    let topSello;
+
+    if (esFixed) {
+      // La banda azul está pegada al fondo de la ventana.
+      // Calculamos: desde el top del footer hasta donde empieza la banda azul.
+      const footerTop = footer.getBoundingClientRect().top; // relativo al viewport
+      const altoBandaAzul = bandaAzul.offsetHeight; // height real
+      const inicioAzulEnViewport = window.innerHeight - altoBandaAzul;
+      // Top del sello relativo al footer (en píxeles de scroll + layout)
+      topSello = (inicioAzulEnViewport - footerTop) + footer.scrollTop;
+    } else {
+      // Banda azul fluye después de banda-blanca: usamos su offsetTop dentro del footer
+      topSello = bandaAzul.offsetTop;
+    }
+
+    // Centramos el sello (-50% de su altura = 55px)
+    sello.style.top = (topSello - 55) + 'px';
+  }
+
+  // Correr al cargar y en cada resize
+  window.addEventListener('load', posicionarSello);
+  window.addEventListener('resize', posicionarSello);
+  window.addEventListener('scroll', posicionarSello);
+  // También intentar rápido por si las fuentes/imágenes cambian el layout
+  setTimeout(posicionarSello, 0);
+  setTimeout(posicionarSello, 150);
+  setTimeout(posicionarSello, 500);
 })();
 </script>
 
