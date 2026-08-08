@@ -823,6 +823,75 @@
   .guardado-item-descargar:hover {
     background-color: rgba(20,49,93,0.08);
   }
+  .guardado-item-descargar:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  /* --- Modal de token GitHub --- */
+  .gh-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(12,34,66,0.55);
+    z-index: 3000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .gh-modal-overlay.visible {
+    display: flex;
+  }
+  .gh-modal-caja {
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 22px 20px;
+    max-width: 380px;
+    width: 100%;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+  }
+  .gh-modal-caja h3 {
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--oxford-blue);
+    font-size: 1.15rem;
+    margin-bottom: 6px;
+  }
+  .gh-modal-caja p {
+    font-family: 'PT Serif', serif;
+    font-size: 0.82rem;
+    color: #555;
+    margin-bottom: 14px;
+    line-height: 1.4;
+  }
+  .gh-modal-caja input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid rgba(20,49,93,0.3);
+    border-radius: 6px;
+    font-family: 'PT Serif', serif;
+    font-size: 0.88rem;
+    margin-bottom: 14px;
+  }
+  .gh-modal-botones {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+  .gh-modal-botones button {
+    font-family: 'PT Serif', serif;
+    font-size: 0.82rem;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid rgba(20,49,93,0.3);
+    background: #fff;
+    color: var(--oxford-blue);
+  }
+  .gh-modal-botones button.gh-confirmar {
+    background: var(--oxford-blue);
+    color: #fff;
+    border-color: var(--oxford-blue);
+  }
 
   /* --- PARCHE DE IMPRESIÓN: fuerza colores/fondos y evita página en blanco extra --- */
   @media print {
@@ -971,6 +1040,18 @@
 </div>
 
 <div id="toast-guardado" class="toast-guardado">Documento guardado</div>
+
+<div class="gh-modal-overlay" id="gh-modal-overlay">
+  <div class="gh-modal-caja">
+    <h3>Subir a GitHub</h3>
+    <p>Pega tu Personal Access Token de GitHub (permiso <strong>repo</strong>). No se guarda en ningún lado; solo se usa para esta subida.</p>
+    <input type="password" id="gh-token-input" placeholder="ghp_..." autocomplete="off" autocapitalize="off" spellcheck="false">
+    <div class="gh-modal-botones">
+      <button type="button" id="gh-cancelar">Cancelar</button>
+      <button type="button" id="gh-confirmar" class="gh-confirmar">Subir</button>
+    </div>
+  </div>
+</div>
 
 
 <script>
@@ -1328,7 +1409,7 @@
     toast.textContent = mensaje;
     toast.classList.add('visible');
     clearTimeout(toast._timeout);
-    toast._timeout = setTimeout(() => toast.classList.remove('visible'), 2200);
+    toast._timeout = setTimeout(() => toast.classList.remove('visible'), 2600);
   }
 
   function guardarComoNuevo() {
@@ -1393,13 +1474,13 @@
       const acciones = document.createElement('div');
       acciones.className = 'guardado-item-acciones';
 
-      const descargar = document.createElement('button');
-      descargar.type = 'button';
-      descargar.className = 'guardado-item-descargar';
-      descargar.textContent = 'Descargar HTML';
-      descargar.addEventListener('click', (e) => {
+      const subir = document.createElement('button');
+      subir.type = 'button';
+      subir.className = 'guardado-item-descargar';
+      subir.textContent = 'Subir a GitHub';
+      subir.addEventListener('click', (e) => {
         e.stopPropagation();
-        descargarHTMLEstatico(entrada);
+        subirAGithub(entrada, subir);
       });
 
       const borrar = document.createElement('button');
@@ -1413,7 +1494,7 @@
         renderizarLista();
       });
 
-      acciones.appendChild(descargar);
+      acciones.appendChild(subir);
       acciones.appendChild(borrar);
 
       item.addEventListener('click', () => {
@@ -1428,7 +1509,7 @@
     });
   }
 
-  // --- Generar y descargar una copia HTML estática (solo lectura) de un guardado ---
+  // --- Generar una copia HTML estática (solo lectura) de un guardado ---
   function generarHTMLEstatico(entrada) {
     const clon = document.documentElement.cloneNode(true);
 
@@ -1452,19 +1533,15 @@
       tituloClon.textContent = tituloOriginalClon.textContent.trim();
     }
 
-    // 2) Quitar del clon la pantalla de guardados y el aviso de "guardado",
-    //    que son parte de la herramienta de edición, no del documento en sí.
-    //    Las imágenes de los sellos (escudo y sello inferior) SE CONSERVAN;
-    //    solo se les quita la función (guardar / ver guardados), no la imagen.
-    ['#pantalla-guardados', '#toast-guardado']
+    // 2) Quitar del clon lo que es parte de la herramienta de edición,
+    //    no del documento en sí (pantalla de guardados, aviso de guardado,
+    //    modal de token GitHub).
+    ['#pantalla-guardados', '#toast-guardado', '#gh-modal-overlay']
       .forEach(sel => {
         const el = clon.querySelector(sel);
         if (el) el.remove();
       });
 
-    // Se conservan sus IDs (el script posicionarSello los necesita para ubicar
-    // el sello inferior), pero ya no tienen ningún listener de clic asociado
-    // porque el script que los creaba (guardar / ver guardados) fue eliminado.
     ['#btn-guardar-doc', '#btn-ver-guardados'].forEach(sel => {
       const el = clon.querySelector(sel);
       if (el) el.removeAttribute('title');
@@ -1475,14 +1552,15 @@
       el.removeAttribute('contenteditable');
     });
 
-    // 3) Quitar únicamente los scripts de edición y de autoguardado/localStorage.
+    // 3) Quitar únicamente los scripts de edición y de autoguardado/localStorage/GitHub.
     //    El script que posiciona el sello inferior (posicionarSello) SE CONSERVA
     //    para que la imagen del sello se vea correctamente ubicada.
     const marcadoresAEliminar = [
       'CLAVE_BORRADOR',
       'enterEdit(el)',
       'PREVENIR NAVEGACION EDITOR',
-      'fechaEl.textContent'
+      'fechaEl.textContent',
+      'GITHUB_OWNER'
     ];
     clon.querySelectorAll('script').forEach(script => {
       const contenido = script.textContent || '';
@@ -1492,26 +1570,6 @@
     });
 
     return '<!DOCTYPE html>\n' + clon.outerHTML;
-  }
-
-  function descargarHTMLEstatico(entrada) {
-    const html = generarHTMLEstatico(entrada);
-    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const nombreBase = (entrada.titulo || 'documento')
-      .toLowerCase()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '')
-      .slice(0, 60) || 'documento';
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = nombreBase + '.html';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    mostrarToast('HTML descargado');
   }
 
   function irAPantalla(nombre) {
@@ -1536,9 +1594,207 @@
   if (btnVolverDoc) {
     btnVolverDoc.addEventListener('click', () => irAPantalla('documento'));
   }
+
+  // Exponer para el script de GitHub
+  window.__aapbGenerarHTMLEstatico = generarHTMLEstatico;
 })();
 </script>
 
+<script>
+(function(){
+  // ============================================================
+  // SUBIDA A GITHUB
+  //   Usuario: GorillaInforma  |  Repositorio: AAPB
+  //   Carpeta destino: se toma del texto del botón inferior
+  //   (lo que está entre las 2 barras después del dominio, ej.
+  //   "www.myagencygov.org/lineamientos/" -> carpeta "lineamientos")
+  //   Antes de subir, clona todas las imágenes de la carpeta
+  //   "lineamientos" del mismo repo hacia la carpeta destino.
+  //   El token nunca se guarda; vive solo en memoria mientras
+  //   se procesa esta subida.
+  // ============================================================
+
+  const GITHUB_OWNER = 'GorillaInforma';
+  const GITHUB_REPO = 'AAPB';
+  const API = 'https://api.github.com';
+  const CARPETA_ORIGEN_IMAGENES = 'lineamientos';
+
+  function mostrarToast(mensaje) {
+    const toast = document.getElementById('toast-guardado');
+    if (!toast) return;
+    toast.textContent = mensaje;
+    toast.classList.add('visible');
+    clearTimeout(toast._timeout);
+    toast._timeout = setTimeout(() => toast.classList.remove('visible'), 3200);
+  }
+
+  function obtenerCarpetaDestino() {
+    const enlace = document.getElementById('enlace-lineamientos');
+    if (!enlace) return null;
+    const texto = enlace.textContent.trim();
+    // Busca "algo.dominio/CARPETA/" y toma CARPETA
+    const match = texto.match(/^[^/]+\/([^/]+)\/?/);
+    if (!match || !match[1]) return null;
+    return match[1].trim();
+  }
+
+  function toBase64Utf8(str) {
+    const bytes = new TextEncoder().encode(str);
+    let binary = '';
+    bytes.forEach(b => { binary += String.fromCharCode(b); });
+    return btoa(binary);
+  }
+
+  function pedirToken() {
+    return new Promise((resolve) => {
+      const overlay = document.getElementById('gh-modal-overlay');
+      const input = document.getElementById('gh-token-input');
+      const btnOk = document.getElementById('gh-confirmar');
+      const btnCancel = document.getElementById('gh-cancelar');
+      if (!overlay || !input || !btnOk || !btnCancel) { resolve(null); return; }
+
+      input.value = '';
+      overlay.classList.add('visible');
+      setTimeout(() => input.focus(), 50);
+
+      function limpiar() {
+        overlay.classList.remove('visible');
+        btnOk.removeEventListener('click', onOk);
+        btnCancel.removeEventListener('click', onCancel);
+        input.removeEventListener('keydown', onKey);
+      }
+      function onOk() {
+        const val = input.value.trim();
+        input.value = '';
+        limpiar();
+        resolve(val || null);
+      }
+      function onCancel() {
+        input.value = '';
+        limpiar();
+        resolve(null);
+      }
+      function onKey(e) {
+        if (e.key === 'Enter') onOk();
+        if (e.key === 'Escape') onCancel();
+      }
+      btnOk.addEventListener('click', onOk);
+      btnCancel.addEventListener('click', onCancel);
+      input.addEventListener('keydown', onKey);
+    });
+  }
+
+  async function ghFetch(path, token, options = {}) {
+    const resp = await fetch(API + path, {
+      ...options,
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json',
+        ...(options.headers || {})
+      }
+    });
+    return resp;
+  }
+
+  async function obtenerShaSiExiste(pathEnRepo, branch, token) {
+    const resp = await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${pathEnRepo}?ref=${encodeURIComponent(branch)}`, token);
+    if (resp.status === 200) {
+      const data = await resp.json();
+      return data.sha || null;
+    }
+    return null;
+  }
+
+  async function subirArchivo(pathEnRepo, contenidoBase64, branch, token, mensaje) {
+    const sha = await obtenerShaSiExiste(pathEnRepo, branch, token);
+    const body = {
+      message: mensaje,
+      content: contenidoBase64,
+      branch: branch
+    };
+    if (sha) body.sha = sha;
+    const resp = await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${pathEnRepo}`, token, {
+      method: 'PUT',
+      body: JSON.stringify(body)
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(`No se pudo subir ${pathEnRepo}: ${err.message || resp.status}`);
+    }
+    return resp.json();
+  }
+
+  async function clonarImagenesDeLineamientos(carpetaDestino, branch, token) {
+    if (carpetaDestino === CARPETA_ORIGEN_IMAGENES) return; // ya es la misma carpeta
+
+    const resp = await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${CARPETA_ORIGEN_IMAGENES}?ref=${encodeURIComponent(branch)}`, token);
+    if (resp.status === 404) {
+      // No existe la carpeta de origen: no hay nada que clonar, seguimos sin error.
+      return;
+    }
+    if (!resp.ok) {
+      throw new Error(`No se pudo leer la carpeta "${CARPETA_ORIGEN_IMAGENES}": ${resp.status}`);
+    }
+    const items = await resp.json();
+    const archivos = Array.isArray(items) ? items.filter(it => it.type === 'file') : [];
+
+    for (const archivo of archivos) {
+      const contenidoResp = await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${CARPETA_ORIGEN_IMAGENES}/${encodeURIComponent(archivo.name)}?ref=${encodeURIComponent(branch)}`, token);
+      if (!contenidoResp.ok) continue;
+      const contenidoData = await contenidoResp.json();
+      if (!contenidoData.content) continue;
+      await subirArchivo(
+        `${carpetaDestino}/${archivo.name}`,
+        contenidoData.content,
+        branch,
+        token,
+        `Clonar ${archivo.name} desde ${CARPETA_ORIGEN_IMAGENES}`
+      );
+    }
+  }
+
+  async function subirAGithub(entrada, botonRef) {
+    const carpeta = obtenerCarpetaDestino();
+    if (!carpeta) {
+      mostrarToast('No pude leer el nombre de la carpeta en el botón de abajo.');
+      return;
+    }
+
+    const token = await pedirToken();
+    if (!token) return;
+
+    if (botonRef) { botonRef.disabled = true; botonRef.textContent = 'Subiendo...'; }
+    mostrarToast('Subiendo a GitHub…');
+
+    try {
+      const repoResp = await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}`, token);
+      if (!repoResp.ok) {
+        throw new Error(repoResp.status === 404
+          ? 'No encontré el repositorio GorillaInforma/AAPB (revisa el nombre o los permisos del token).'
+          : `Error al leer el repositorio (${repoResp.status}).`);
+      }
+      const repoData = await repoResp.json();
+      const branch = repoData.default_branch || 'main';
+
+      await clonarImagenesDeLineamientos(carpeta, branch, token);
+
+      const html = window.__aapbGenerarHTMLEstatico(entrada);
+      const htmlBase64 = toBase64Utf8(html);
+      await subirArchivo(`${carpeta}/index.html`, htmlBase64, branch, token, `Publicar documento: ${entrada.titulo || 'sin título'}`);
+
+      mostrarToast(`Subido a GitHub: /${carpeta}/ ✓`);
+    } catch (err) {
+      console.error(err);
+      mostrarToast('Error al subir: ' + err.message);
+    } finally {
+      if (botonRef) { botonRef.disabled = false; botonRef.textContent = 'Subir a GitHub'; }
+    }
+  }
+
+  window.subirAGithub = subirAGithub;
+})();
+</script>
 
 <script>
 (function(){
