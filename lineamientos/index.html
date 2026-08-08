@@ -803,6 +803,26 @@
   .guardado-item-borrar:hover {
     background-color: rgba(170,51,51,0.08);
   }
+  .guardado-item-acciones {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .guardado-item-descargar {
+    flex-shrink: 0;
+    font-family: 'PT Serif', serif;
+    font-size: 0.78rem;
+    color: var(--oxford-blue);
+    background: none;
+    border: 1px solid rgba(20,49,93,0.3);
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+  .guardado-item-descargar:hover {
+    background-color: rgba(20,49,93,0.08);
+  }
 
   /* --- PARCHE DE IMPRESIÓN: fuerza colores/fondos y evita página en blanco extra --- */
   @media print {
@@ -933,7 +953,7 @@
 
   <div class="banda-azul">
     <div class="aapb-marca editable" id="campo-aapb" spellcheck="false">AAPB</div>
-    <a href="https://www.myagencygov.org/lineamientos/" class="enlace-lineamientos" id="enlace-lineamientos">www.myagencygov.org/lineamientos/</a>
+    <a href="https://www.myagencygov.org/lineamientos/" class="enlace-lineamientos editable" id="enlace-lineamientos" spellcheck="false">www.myagencygov.org/lineamientos/</a>
   </div>
 </footer>
 
@@ -1188,18 +1208,15 @@
 
 <script>
 (function(){
-  // --- Enlace a lineamientos: si ya estamos ahí, no hacer nada al tocarlo ---
+  // MARCADOR-EXPORTACION: PREVENIR NAVEGACION EDITOR
+  // --- Enlace a lineamientos: ahora es un campo editable (doble clic/toque).
+  //     Mientras se usa el editor, el clic no debe navegar (para no perder
+  //     la edición); en el HTML estático exportado este script no se incluye,
+  //     así que el enlace vuelve a funcionar con normalidad. ---
   const enlace = document.getElementById('enlace-lineamientos');
   if (enlace) {
     enlace.addEventListener('click', function(e){
-      try {
-        const rutaActual = window.location.pathname.replace(/\/+$/, '');
-        if (rutaActual === '/lineamientos') {
-          e.preventDefault();
-        }
-      } catch (err) {
-        // Si algo falla al leer la ubicación, dejamos que el enlace navegue normalmente
-      }
+      e.preventDefault();
     });
   }
 })();
@@ -1228,7 +1245,8 @@
     'fecha-actual',
     'campo-contenido',
     'campo-firma',
-    'campo-aapb'
+    'campo-aapb',
+    'enlace-lineamientos'
   ];
 
   function tomarFoto() {
@@ -1372,6 +1390,18 @@
       info.appendChild(titulo);
       info.appendChild(fecha);
 
+      const acciones = document.createElement('div');
+      acciones.className = 'guardado-item-acciones';
+
+      const descargar = document.createElement('button');
+      descargar.type = 'button';
+      descargar.className = 'guardado-item-descargar';
+      descargar.textContent = 'Descargar HTML';
+      descargar.addEventListener('click', (e) => {
+        e.stopPropagation();
+        descargarHTMLEstatico(entrada);
+      });
+
       const borrar = document.createElement('button');
       borrar.type = 'button';
       borrar.className = 'guardado-item-borrar';
@@ -1383,6 +1413,9 @@
         renderizarLista();
       });
 
+      acciones.appendChild(descargar);
+      acciones.appendChild(borrar);
+
       item.addEventListener('click', () => {
         aplicarFoto(entrada.campos);
         guardarBorrador();
@@ -1390,9 +1423,95 @@
       });
 
       item.appendChild(info);
-      item.appendChild(borrar);
+      item.appendChild(acciones);
       listaGuardados.appendChild(item);
     });
+  }
+
+  // --- Generar y descargar una copia HTML estática (solo lectura) de un guardado ---
+  function generarHTMLEstatico(entrada) {
+    const clon = document.documentElement.cloneNode(true);
+
+    // 0) El clon copia el estado visual actual de la página (por ejemplo,
+    //    si estabas en la pantalla de "guardados", #pantalla-documento
+    //    puede tener display:none inline). Forzamos que el documento
+    //    siempre se vea, sin importar en qué pantalla estabas al descargar.
+    const pantallaDocClon = clon.querySelector('#pantalla-documento');
+    if (pantallaDocClon) pantallaDocClon.style.display = 'block';
+
+    // 1) Volcar los campos exactos del guardado dentro del clon
+    IDS_CAMPOS.forEach(id => {
+      const el = clon.querySelector('#' + id);
+      if (el && entrada.campos && typeof entrada.campos[id] === 'string') {
+        el.innerHTML = entrada.campos[id];
+      }
+    });
+    const tituloClon = clon.querySelector('#titulo-clon-header');
+    const tituloOriginalClon = clon.querySelector('.titulo-oficial');
+    if (tituloClon && tituloOriginalClon) {
+      tituloClon.textContent = tituloOriginalClon.textContent.trim();
+    }
+
+    // 2) Quitar del clon la pantalla de guardados y el aviso de "guardado",
+    //    que son parte de la herramienta de edición, no del documento en sí.
+    //    Las imágenes de los sellos (escudo y sello inferior) SE CONSERVAN;
+    //    solo se les quita la función (guardar / ver guardados), no la imagen.
+    ['#pantalla-guardados', '#toast-guardado']
+      .forEach(sel => {
+        const el = clon.querySelector(sel);
+        if (el) el.remove();
+      });
+
+    // Se conservan sus IDs (el script posicionarSello los necesita para ubicar
+    // el sello inferior), pero ya no tienen ningún listener de clic asociado
+    // porque el script que los creaba (guardar / ver guardados) fue eliminado.
+    ['#btn-guardar-doc', '#btn-ver-guardados'].forEach(sel => {
+      const el = clon.querySelector(sel);
+      if (el) el.removeAttribute('title');
+    });
+
+    clon.querySelectorAll('.editable').forEach(el => {
+      el.classList.remove('editable', 'editing');
+      el.removeAttribute('contenteditable');
+    });
+
+    // 3) Quitar únicamente los scripts de edición y de autoguardado/localStorage.
+    //    El script que posiciona el sello inferior (posicionarSello) SE CONSERVA
+    //    para que la imagen del sello se vea correctamente ubicada.
+    const marcadoresAEliminar = [
+      'CLAVE_BORRADOR',
+      'enterEdit(el)',
+      'PREVENIR NAVEGACION EDITOR',
+      'fechaEl.textContent'
+    ];
+    clon.querySelectorAll('script').forEach(script => {
+      const contenido = script.textContent || '';
+      if (marcadoresAEliminar.some(marca => contenido.includes(marca))) {
+        script.remove();
+      }
+    });
+
+    return '<!DOCTYPE html>\n' + clon.outerHTML;
+  }
+
+  function descargarHTMLEstatico(entrada) {
+    const html = generarHTMLEstatico(entrada);
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const nombreBase = (entrada.titulo || 'documento')
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '')
+      .slice(0, 60) || 'documento';
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = nombreBase + '.html';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    mostrarToast('HTML descargado');
   }
 
   function irAPantalla(nombre) {
