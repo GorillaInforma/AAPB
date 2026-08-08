@@ -624,6 +624,7 @@
       position: relative !important;
       height: auto !important;
       min-height: 140px !important;
+      padding-top: 70px !important;
     }
     .marca-agua-arco {
       display: none !important;
@@ -1425,23 +1426,33 @@
     if (!sello || !footer || !bandaAzul) return;
 
     const esFixed = getComputedStyle(bandaAzul).position === 'fixed';
-    let topBorde;
 
     if (esFixed) {
-      const footerTop = footer.getBoundingClientRect().top;
+      // Móvil: la banda azul está pegada al fondo del viewport.
+      // El sello también se ancla al viewport con position:fixed,
+      // así no brinca con el scroll.
       const altoBanda = bandaAzul.offsetHeight;
-      topBorde = (window.innerHeight - altoBanda - footerTop) + footer.scrollTop;
+      const selloH = sello.offsetHeight || 110;
+      sello.style.position = 'fixed';
+      sello.style.bottom = (altoBanda - selloH / 2) + 'px';
+      sello.style.top = 'auto';
+      sello.style.left = '50%';
+      sello.style.transform = 'translateX(-50%)';
     } else {
-      topBorde = bandaAzul.offsetTop;
+      // Escritorio: la banda azul fluye en el documento.
+      // El sello es absolute relativo al footer — no necesita scroll.
+      const selloH = sello.offsetHeight || 110;
+      sello.style.position = 'absolute';
+      sello.style.bottom = 'auto';
+      sello.style.top = (bandaAzul.offsetTop - selloH / 2) + 'px';
+      sello.style.left = '50%';
+      sello.style.transform = 'translateX(-50%)';
     }
-
-    const selloH = sello.offsetHeight || 110;
-    sello.style.top = (topBorde - selloH / 2) + 'px';
   }
 
+  // Solo load y resize — sin scroll
   window.addEventListener('load',   posicionarSello);
   window.addEventListener('resize', posicionarSello);
-  window.addEventListener('scroll', posicionarSello);
   setTimeout(posicionarSello, 0);
   setTimeout(posicionarSello, 150);
   setTimeout(posicionarSello, 500);
