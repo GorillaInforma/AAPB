@@ -428,9 +428,10 @@
   /* --- AAPB en banda azul inferior - estilo THE WHITE HOUSE --- */
   footer.oficial-footer .banda-azul {
     display: flex !important;
+    flex-direction: column !important;
     justify-content: center !important;
-    align-items: flex-end !important;
-    padding-bottom: 22px !important;
+    align-items: center !important;
+    padding-bottom: 14px !important;
   }
   .aapb-marca {
     font-family: 'Cormorant Garamond', 'Times New Roman', Times, serif;
@@ -449,6 +450,43 @@
     .aapb-marca {
       font-size: clamp(2rem, 13vw, 3rem);
       padding-bottom: 6px;
+    }
+  }
+
+  /* --- Enlace 3D a lineamientos, dentro de la banda azul --- */
+  .enlace-lineamientos {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 10px 18px;
+    font-family: 'PT Serif', 'Times New Roman', Times, serif;
+    font-size: clamp(0.72rem, 2.4vw, 0.85rem);
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--oxford-blue-deep);
+    text-decoration: none;
+    text-align: center;
+    white-space: nowrap;
+    background: linear-gradient(180deg, #ffffff 0%, #e6ecf5 100%);
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.6);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.8) inset,
+      0 -2px 3px rgba(12,34,66,0.18) inset,
+      0 6px 14px rgba(0,0,0,0.32),
+      0 2px 4px rgba(0,0,0,0.18);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    cursor: pointer;
+  }
+  .enlace-lineamientos:active {
+    transform: translateY(1px) scale(0.99);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.6) inset,
+      0 -1px 2px rgba(12,34,66,0.18) inset,
+      0 3px 8px rgba(0,0,0,0.28);
+  }
+  @media (max-width: 600px) {
+    .enlace-lineamientos {
+      padding: 9px 14px;
     }
   }
 
@@ -583,7 +621,8 @@
     }
     footer.oficial-footer .banda-azul {
       position: static !important;
-      height: 140px !important;
+      height: auto !important;
+      min-height: 140px !important;
     }
     footer.oficial-footer .sello-wrap {
       position: absolute !important;
@@ -890,7 +929,10 @@
 
 </div>
 
-  <div class="banda-azul"><div class="aapb-marca editable" id="campo-aapb" spellcheck="false">AAPB</div></div>
+  <div class="banda-azul">
+    <div class="aapb-marca editable" id="campo-aapb" spellcheck="false">AAPB</div>
+    <a href="https://www.myagencygov.org/lineamientos/" class="enlace-lineamientos" id="enlace-lineamientos">www.myagencygov.org/lineamientos/</a>
+  </div>
   <div class="sello-wrap boton-ver-guardados" id="btn-ver-guardados" title="Ver documentos guardados">
     <img class="shield" src="imagen_6.png" alt="Sello oficial - ver guardados">
   </div>
@@ -1101,6 +1143,25 @@
       });
     }
   });
+})();
+</script>
+
+<script>
+(function(){
+  // --- Enlace a lineamientos: si ya estamos ahí, no hacer nada al tocarlo ---
+  const enlace = document.getElementById('enlace-lineamientos');
+  if (enlace) {
+    enlace.addEventListener('click', function(e){
+      try {
+        const rutaActual = window.location.pathname.replace(/\/+$/, '');
+        if (rutaActual === '/lineamientos') {
+          e.preventDefault();
+        }
+      } catch (err) {
+        // Si algo falla al leer la ubicación, dejamos que el enlace navegue normalmente
+      }
+    });
+  }
 })();
 </script>
 
@@ -1320,4 +1381,4 @@
 </script>
 
 </body>
-  </html>
+</html>
