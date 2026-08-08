@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" id="favicon-circular" type="image/png" href="/logo.png">
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" type="image/png" href="/logo.png">
 <link rel="apple-touch-icon" href="/logo.png">
@@ -1464,5 +1465,24 @@
   }
 })();
 </script>
+  <script>
+(function(){
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  img.src = '/logo.png';
+  img.onload = function(){
+    ctx.beginPath();
+    ctx.arc(32, 32, 32, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(img, 0, 0, 64, 64);
+    const favicon = document.getElementById('favicon-circular');
+    if(favicon) favicon.href = canvas.toDataURL('image/png');
+  };
+})();
+  </script>
 </body>
 </html>
