@@ -122,6 +122,13 @@
     box-sizing: border-box;
   }
 
+  /* Envuelve solo el párrafo y la firma, para que la marca de agua
+     quede centrada detrás de ellos y no se monte sobre la fecha */
+  .cuerpo-con-marca {
+    position: relative;
+    overflow: hidden;
+  }
+
   /* Contenido oficial - va dentro de banda-blanca - fuente tipo libro como la captura */
   footer.oficial-footer .banda-blanca .contenido-oficial {
     font-family: 'PT Serif', 'Times New Roman', Times, Georgia, serif;
@@ -168,15 +175,15 @@
     mix-blend-mode: normal;
   }
 
-  /* Marca de agua sello gris - fija y casi transparente */
+  /* Marca de agua sello gris - confinada al bloque de contenido, casi transparente */
   .marca-agua-sello {
-    position: fixed;
+    position: absolute;
     top: 50%;
     left: 50%;
     width: min(70vw, 500px);
     height: min(70vw, 500px);
     transform: translate(-50%, -50%);
-    z-index: 9999;
+    z-index: 0;
     pointer-events: none;
     opacity: 0.09;
     filter: grayscale(1);
@@ -596,8 +603,6 @@
 </style>
 </head>
 <body>
-<div class="marca-agua-sello"><img src="imagen_1.png" alt="marca de agua"></div>
-
 
 <header>
   <h1>Agencia Autónoma del Poder Blando</h1>
@@ -624,7 +629,6 @@
 <footer class="oficial-footer">
   
 <div class="banda-blanca">
-  
 
 <div id="tres-figuras-sticky">
   <img src="imagen_4.png" alt="buho" style="width:48px; height:auto;">
@@ -632,18 +636,21 @@
 
 
 <div class="fecha-actual" id="fecha-actual"></div>
-  <div class="contenido-oficial">
-    <p>Detrás de ese poder hay solo 10 personas —ninguna votada por un mexicano—: desde Trump y su secretario del Tesoro, hasta el jefe de la Reserva Federal, el CEO de JPMorgan y el de BlackRock, más los líderes de China, Rusia, India y Brasil, cuya decisiones sobre tasas, sanciones, comercio y flujos de capital mueven el peso sin que México tenga voto en la mesa. Ni el FMI, ni el Banco de Pagos Internacionales, ni la OMC cambian eso: México los sigue, no los dirige.</p>
+  <div class="cuerpo-con-marca">
+    <div class="marca-agua-sello"><img src="imagen_1.png" alt="marca de agua"></div>
+    <div class="contenido-oficial">
+      <p>Detrás de ese poder hay solo 10 personas —ninguna votada por un mexicano—: desde Trump y su secretario del Tesoro, hasta el jefe de la Reserva Federal, el CEO de JPMorgan y el de BlackRock, más los líderes de China, Rusia, India y Brasil, cuya decisiones sobre tasas, sanciones, comercio y flujos de capital mueven el peso sin que México tenga voto en la mesa. Ni el FMI, ni el Banco de Pagos Internacionales, ni la OMC cambian eso: México los sigue, no los dirige.</p>
+    </div>
+    <div class="firma-bloque">
+      <div class="firma-img-wrap">
+        <img src="imagen_5.png" alt="Firma Bruno Hernández">
+      </div>
+      <div class="firma-linea"></div>
+      <div class="firma-texto">
+        Coordinador de<br>Lineamientos Estratégicos<br><strong>Bruno Hernández</strong>
+      </div>
+    </div>
   </div>
-<div class="firma-bloque">
-  <div class="firma-img-wrap">
-    <img src="imagen_5.png" alt="Firma Bruno Hernández">
-  </div>
-  <div class="firma-linea"></div>
-  <div class="firma-texto">
-    Coordinador de<br>Lineamientos Estratégicos<br><strong>Bruno Hernández</strong>
-  </div>
-</div>
 
 </div>
 
