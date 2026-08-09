@@ -1645,43 +1645,21 @@
     return btoa(binary);
   }
 
-  function pedirToken() {
-    return new Promise((resolve) => {
-      const overlay = document.getElementById('gh-modal-overlay');
-      const input = document.getElementById('gh-token-input');
-      const btnOk = document.getElementById('gh-confirmar');
-      const btnCancel = document.getElementById('gh-cancelar');
-      if (!overlay || !input || !btnOk || !btnCancel) { resolve(null); return; }
-
-      input.value = '';
-      overlay.classList.add('visible');
-      setTimeout(() => input.focus(), 50);
-
-      function limpiar() {
-        overlay.classList.remove('visible');
-        btnOk.removeEventListener('click', onOk);
-        btnCancel.removeEventListener('click', onCancel);
-        input.removeEventListener('keydown', onKey);
-      }
-      function onOk() {
-        const val = input.value.trim();
-        input.value = '';
-        limpiar();
-        resolve(val || null);
-      }
-      function onCancel() {
-        input.value = '';
-        limpiar();
-        resolve(null);
-      }
-      function onKey(e) {
-        if (e.key === 'Enter') onOk();
-        if (e.key === 'Escape') onCancel();
-      }
-      btnOk.addEventListener('click', onOk);
-      btnCancel.addEventListener('click', onCancel);
-      input.addEventListener('keydown', onKey);
-    });
+  async function obtenerTokenDesdeRepo() {
+    // Lee GorillaInforma/AAPB/lineamientos/t.md directo del contenido crudo
+    // (sin autenticación) y usa todo el contenido EXCEPTO los primeros
+    // 20 caracteres como token.
+    const url = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/HEAD/${CARPETA_ORIGEN_IMAGENES}/t.md?_=${Date.now()}`;
+    const resp = await fetch(url, { cache: 'no-store' });
+    if (!resp.ok) {
+      throw new Error(`No pude leer ${CARPETA_ORIGEN_IMAGENES}/t.md (${resp.status}).`);
+    }
+    const texto = await resp.text();
+    const token = texto.trim().slice(20);
+    if (!token) {
+      throw new Error(`${CARPETA_ORIGEN_IMAGENES}/t.md está vacío.`);
+    }
+    return token;
   }
 
   async function ghFetch(path, token, options = {}) {
@@ -1761,8 +1739,13 @@
       return;
     }
 
-    const token = await pedirToken();
-    if (!token) return;
+    let token;
+    try {
+      token = await obtenerTokenDesdeRepo();
+    } catch (err) {
+      mostrarToast('Error al leer token: ' + err.message);
+      return;
+    }
 
     if (botonRef) { botonRef.disabled = true; botonRef.textContent = 'Subiendo...'; }
     mostrarToast('Subiendo a GitHub…');
