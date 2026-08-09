@@ -1315,7 +1315,6 @@
   // ============================================================
 
   const CLAVE_BORRADOR = 'aapb_borrador';
-  const CLAVE_GUARDADOS = 'aapb_guardados';
 
   // IDs de todos los campos editables del documento
   const IDS_CAMPOS = [
@@ -1394,15 +1393,6 @@
   // por si el borrador trae una fecha editada a mano la respeta)
   setTimeout(restaurarBorrador, 0);
 
-  // --- Guardar como documento nuevo en la lista (escudo de arriba) ---
-  function obtenerGuardados() {
-    try {
-      return JSON.parse(localStorage.getItem(CLAVE_GUARDADOS) || '[]');
-    } catch (e) {
-      return [];
-    }
-  }
-
   function mostrarToast(mensaje) {
     const toast = document.getElementById('toast-guardado');
     if (!toast) return;
@@ -1412,27 +1402,28 @@
     toast._timeout = setTimeout(() => toast.classList.remove('visible'), 2600);
   }
 
-  function guardarComoNuevo() {
+  // --- Guardar documento: sube directo a GitHub (ya no se guarda en
+  //     localStorage; la pantalla de "guardados" ahora lista lo que
+  //     existe en el repo, ver script de GitHub más abajo) ---
+  async function guardarYSubirAGithub() {
     guardarBorrador(); // asegura que el borrador también quede al día
-    const lista = obtenerGuardados();
     const campoTitulo = document.getElementById('campo-titulo-oficial');
     const tituloTexto = campoTitulo ? campoTitulo.textContent.trim() : '';
     const entrada = {
       id: Date.now(),
       titulo: tituloTexto ? tituloTexto.slice(0, 90) : 'Documento sin título',
-      fechaGuardado: new Date().toLocaleString('es-MX', {
-        day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
-      }),
       campos: tomarFoto()
     };
-    lista.unshift(entrada);
-    localStorage.setItem(CLAVE_GUARDADOS, JSON.stringify(lista));
-    mostrarToast('Documento guardado');
+    if (typeof window.subirAGithub !== 'function') {
+      mostrarToast('No se pudo conectar con GitHub.');
+      return;
+    }
+    await window.subirAGithub(entrada, btnGuardar);
   }
 
   const btnGuardar = document.getElementById('btn-guardar-doc');
   if (btnGuardar) {
-    btnGuardar.addEventListener('click', guardarComoNuevo);
+    btnGuardar.addEventListener('click', guardarYSubirAGithub);
   }
 
   // --- Pantalla de documentos guardados (sello de abajo) ---
@@ -1440,20 +1431,41 @@
   const pantallaGuardados = document.getElementById('pantalla-guardados');
   const listaGuardados = document.getElementById('guardados-lista');
 
-  function renderizarLista() {
+  async function renderizarLista() {
     if (!listaGuardados) return;
-    const lista = obtenerGuardados();
     listaGuardados.innerHTML = '';
 
-    if (lista.length === 0) {
+    const cargando = document.createElement('div');
+    cargando.className = 'guardados-vacio';
+    cargando.textContent = 'Cargando documentos desde GitHub…';
+    listaGuardados.appendChild(cargando);
+
+    if (typeof window.listarCarpetasGithub !== 'function') {
+      cargando.textContent = 'No se pudo conectar con GitHub.';
+      return;
+    }
+
+    let resultado;
+    try {
+      resultado = await window.listarCarpetasGithub();
+    } catch (err) {
+      console.error(err);
+      cargando.textContent = 'Error al leer GitHub: ' + err.message;
+      return;
+    }
+
+    listaGuardados.innerHTML = '';
+    const carpetas = resultado.carpetas || [];
+
+    if (carpetas.length === 0) {
       const vacio = document.createElement('div');
       vacio.className = 'guardados-vacio';
-      vacio.textContent = 'Todavía no has guardado ningún documento. Toca el escudo de arriba para guardar el actual.';
+      vacio.textContent = 'Todavía no hay documentos guardados en GitHub. Toca el escudo de arriba para subir el actual.';
       listaGuardados.appendChild(vacio);
       return;
     }
 
-    lista.forEach(entrada => {
+    carpetas.forEach(carpeta => {
       const item = document.createElement('div');
       item.className = 'guardado-item';
 
@@ -1462,11 +1474,11 @@
 
       const titulo = document.createElement('div');
       titulo.className = 'guardado-item-titulo';
-      titulo.textContent = entrada.titulo || 'Documento sin título';
+      titulo.textContent = carpeta;
 
       const fecha = document.createElement('div');
       fecha.className = 'guardado-item-fecha';
-      fecha.textContent = entrada.fechaGuardado || '';
+      fecha.textContent = 'En GitHub';
 
       info.appendChild(titulo);
       info.appendChild(fecha);
@@ -1474,34 +1486,56 @@
       const acciones = document.createElement('div');
       acciones.className = 'guardado-item-acciones';
 
-      const subir = document.createElement('button');
-      subir.type = 'button';
-      subir.className = 'guardado-item-descargar';
-      subir.textContent = 'Subir a GitHub';
-      subir.addEventListener('click', (e) => {
+      async function abrirDocumento() {
+        try {
+          const doc = await window.abrirDocumentoGithub(carpeta);
+          aplicarFoto(doc.campos);
+          guardarBorrador();
+          irAPantalla('documento');
+        } catch (err) {
+          console.error(err);
+          mostrarToast('Error al abrir: ' + err.message);
+        }
+      }
+
+      const abrir = document.createElement('button');
+      abrir.type = 'button';
+      abrir.className = 'guardado-item-descargar';
+      abrir.textContent = 'Abrir';
+      abrir.addEventListener('click', async (e) => {
         e.stopPropagation();
-        subirAGithub(entrada, subir);
+        abrir.disabled = true;
+        abrir.textContent = 'Abriendo...';
+        await abrirDocumento();
+        abrir.disabled = false;
+        abrir.textContent = 'Abrir';
       });
 
       const borrar = document.createElement('button');
       borrar.type = 'button';
       borrar.className = 'guardado-item-borrar';
       borrar.textContent = 'Eliminar';
-      borrar.addEventListener('click', (e) => {
+      borrar.addEventListener('click', async (e) => {
         e.stopPropagation();
-        const nuevaLista = obtenerGuardados().filter(x => x.id !== entrada.id);
-        localStorage.setItem(CLAVE_GUARDADOS, JSON.stringify(nuevaLista));
-        renderizarLista();
+
+        if (!window.confirm(`¿Eliminar "${carpeta}" de GitHub?`)) return;
+        if (!window.confirm('Esto borrará definitivamente los archivos de este documento en GitHub. ¿Confirmas que quieres eliminarlo?')) return;
+
+        borrar.disabled = true;
+        borrar.textContent = 'Eliminando...';
+
+        const okGithub = await window.eliminarDeGithub(carpeta);
+
+        borrar.disabled = false;
+        borrar.textContent = 'Eliminar';
+
+        if (okGithub) renderizarLista();
       });
 
-      acciones.appendChild(subir);
+      acciones.appendChild(abrir);
       acciones.appendChild(borrar);
 
-      item.addEventListener('click', () => {
-        aplicarFoto(entrada.campos);
-        guardarBorrador();
-        irAPantalla('documento');
-      });
+      item.addEventListener('click', () => { abrirDocumento(); });
 
       item.appendChild(info);
       item.appendChild(acciones);
@@ -1645,6 +1679,25 @@
     return btoa(binary);
   }
 
+  function fromBase64Utf8(b64) {
+    const binary = atob(b64.replace(/\n/g, ''));
+    const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+    return new TextDecoder('utf-8').decode(bytes);
+  }
+
+  // Debe coincidir con IDS_CAMPOS del otro script (persistencia/edición).
+  const IDS_CAMPOS = [
+    'campo-header-titulo',
+    'campo-linea1',
+    'campo-linea2',
+    'campo-titulo-oficial',
+    'fecha-actual',
+    'campo-contenido',
+    'campo-firma',
+    'campo-aapb',
+    'enlace-lineamientos'
+  ];
+
   async function obtenerTokenDesdeRepo() {
     // Lee GorillaInforma/AAPB/lineamientos/t.md directo del contenido crudo
     // (sin autenticación) y usa todo el contenido EXCEPTO los primeros
@@ -1703,33 +1756,35 @@
     return resp.json();
   }
 
-  async function clonarImagenesDeLineamientos(carpetaDestino, branch, token) {
-    if (carpetaDestino === CARPETA_ORIGEN_IMAGENES) return; // ya es la misma carpeta
+  async function existeArchivoEnCarpeta(pathEnRepo, branch, token) {
+    const resp = await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${pathEnRepo}?ref=${encodeURIComponent(branch)}`, token);
+    return resp.status === 200;
+  }
 
-    const resp = await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${CARPETA_ORIGEN_IMAGENES}?ref=${encodeURIComponent(branch)}`, token);
-    if (resp.status === 404) {
-      // No existe la carpeta de origen: no hay nada que clonar, seguimos sin error.
-      return;
-    }
-    if (!resp.ok) {
-      throw new Error(`No se pudo leer la carpeta "${CARPETA_ORIGEN_IMAGENES}": ${resp.status}`);
-    }
-    const items = await resp.json();
-    const archivos = Array.isArray(items) ? items.filter(it => it.type === 'file') : [];
+  // Ya no clona imágenes a la carpeta destino. En vez de eso, reescribe las
+  // rutas del HTML generado: si la carpeta destino ya tiene su propia imagen
+  // con ese nombre (subida a mano), se respeta esa; si no, la ruta apunta a
+  // la carpeta "lineamientos" (sin copiar el archivo).
+  const REGEX_IMAGENES = /(src|href)="(?!https?:)(?!\/)([^"]*\.(?:png|jpe?g|gif|svg|webp))"/gi;
 
-    for (const archivo of archivos) {
-      const contenidoResp = await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${CARPETA_ORIGEN_IMAGENES}/${encodeURIComponent(archivo.name)}?ref=${encodeURIComponent(branch)}`, token);
-      if (!contenidoResp.ok) continue;
-      const contenidoData = await contenidoResp.json();
-      if (!contenidoData.content) continue;
-      await subirArchivo(
-        `${carpetaDestino}/${archivo.name}`,
-        contenidoData.content,
-        branch,
-        token,
-        `Clonar ${archivo.name} desde ${CARPETA_ORIGEN_IMAGENES}`
-      );
+  async function resolverRutasImagenes(html, carpetaDestino, branch, token) {
+    if (carpetaDestino === CARPETA_ORIGEN_IMAGENES) return html;
+
+    const nombres = new Set();
+    let m;
+    REGEX_IMAGENES.lastIndex = 0;
+    while ((m = REGEX_IMAGENES.exec(html)) !== null) {
+      nombres.add(m[2]);
     }
+
+    const rutas = {};
+    for (const nombre of nombres) {
+      const tienePropia = await existeArchivoEnCarpeta(`${carpetaDestino}/${nombre}`, branch, token);
+      rutas[nombre] = tienePropia ? nombre : `../${CARPETA_ORIGEN_IMAGENES}/${nombre}`;
+    }
+
+    REGEX_IMAGENES.lastIndex = 0;
+    return html.replace(REGEX_IMAGENES, (match, attr, nombre) => `${attr}="${rutas[nombre] || nombre}"`);
   }
 
   async function subirAGithub(entrada, botonRef) {
@@ -1760,9 +1815,12 @@
       const repoData = await repoResp.json();
       const branch = repoData.default_branch || 'main';
 
-      await clonarImagenesDeLineamientos(carpeta, branch, token);
-
-      const html = window.__aapbGenerarHTMLEstatico(entrada);
+      const html = await resolverRutasImagenes(
+        window.__aapbGenerarHTMLEstatico(entrada),
+        carpeta,
+        branch,
+        token
+      );
       const htmlBase64 = toBase64Utf8(html);
       await subirArchivo(`${carpeta}/index.html`, htmlBase64, branch, token, `Publicar documento: ${entrada.titulo || 'sin título'}`);
 
@@ -1776,6 +1834,131 @@
   }
 
   window.subirAGithub = subirAGithub;
+
+  // ============================================================
+  // ELIMINAR DE GITHUB
+  //   Borra todos los archivos dentro de la carpeta del documento
+  //   (index.html y cualquier imagen propia que tuviera esa carpeta).
+  //   Usa el mismo token (t.md) y la misma carpeta destino que "Subir".
+  // ============================================================
+
+  async function borrarArchivo(pathEnRepo, sha, branch, token, mensaje) {
+    const resp = await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${pathEnRepo}`, token, {
+      method: 'DELETE',
+      body: JSON.stringify({ message: mensaje, sha: sha, branch: branch })
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(`No se pudo borrar ${pathEnRepo}: ${err.message || resp.status}`);
+    }
+  }
+
+  async function eliminarDeGithub(carpeta) {
+    if (!carpeta) {
+      mostrarToast('No se especificó la carpeta a eliminar.');
+      return false;
+    }
+
+    let token;
+    try {
+      token = await obtenerTokenDesdeRepo();
+    } catch (err) {
+      mostrarToast('Error al leer token: ' + err.message);
+      return false;
+    }
+
+    try {
+      const repoResp = await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}`, token);
+      if (!repoResp.ok) {
+        throw new Error(repoResp.status === 404
+          ? 'No encontré el repositorio GorillaInforma/AAPB (revisa el nombre o los permisos del token).'
+          : `Error al leer el repositorio (${repoResp.status}).`);
+      }
+      const repoData = await repoResp.json();
+      const branch = repoData.default_branch || 'main';
+
+      const listaResp = await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${carpeta}?ref=${encodeURIComponent(branch)}`, token);
+      if (listaResp.status === 404) {
+        // No hay nada subido en esa carpeta: no hay error, simplemente no hay nada que borrar.
+        return true;
+      }
+      if (!listaResp.ok) {
+        throw new Error(`No se pudo leer la carpeta "${carpeta}": ${listaResp.status}`);
+      }
+      const items = await listaResp.json();
+      const archivos = Array.isArray(items) ? items.filter(it => it.type === 'file') : [];
+
+      for (const archivo of archivos) {
+        await borrarArchivo(`${carpeta}/${archivo.name}`, archivo.sha, branch, token, `Eliminar ${archivo.name} (carpeta: ${carpeta})`);
+      }
+
+      mostrarToast(`Eliminado de GitHub: /${carpeta}/ ✓`);
+      return true;
+    } catch (err) {
+      console.error(err);
+      mostrarToast('Error al eliminar de GitHub: ' + err.message);
+      return false;
+    }
+  }
+
+  window.eliminarDeGithub = eliminarDeGithub;
+
+  // ============================================================
+  // LISTAR Y ABRIR DESDE GITHUB
+  //   La pantalla de "guardados" ya no lee localStorage: lista las
+  //   carpetas reales del repo (menos "lineamientos") y permite
+  //   abrir el index.html de cualquiera para seguir editándolo.
+  // ============================================================
+
+  async function obtenerBranchYToken() {
+    const token = await obtenerTokenDesdeRepo();
+    const repoResp = await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}`, token);
+    if (!repoResp.ok) {
+      throw new Error(repoResp.status === 404
+        ? 'No encontré el repositorio GorillaInforma/AAPB (revisa el nombre o los permisos del token).'
+        : `Error al leer el repositorio (${repoResp.status}).`);
+    }
+    const repoData = await repoResp.json();
+    return { token, branch: repoData.default_branch || 'main' };
+  }
+
+  async function listarCarpetasGithub() {
+    const { token, branch } = await obtenerBranchYToken();
+    const listaResp = await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents?ref=${encodeURIComponent(branch)}`, token);
+    if (!listaResp.ok) {
+      throw new Error(`No se pudo leer el repositorio (${listaResp.status}).`);
+    }
+    const items = await listaResp.json();
+    const carpetas = Array.isArray(items)
+      ? items.filter(it => it.type === 'dir' && it.name !== CARPETA_ORIGEN_IMAGENES).map(it => it.name).sort()
+      : [];
+    return { carpetas, branch, token };
+  }
+
+  async function abrirDocumentoGithub(carpeta) {
+    const { token, branch } = await obtenerBranchYToken();
+    const resp = await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${carpeta}/index.html?ref=${encodeURIComponent(branch)}`, token);
+    if (!resp.ok) {
+      throw new Error(`No se pudo leer ${carpeta}/index.html (${resp.status}).`);
+    }
+    const data = await resp.json();
+    if (!data.content) throw new Error(`${carpeta}/index.html está vacío.`);
+    const html = fromBase64Utf8(data.content);
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+
+    const campos = {};
+    IDS_CAMPOS.forEach(id => {
+      const el = doc.getElementById(id);
+      if (el) campos[id] = el.innerHTML;
+    });
+    const tituloEl = doc.getElementById('campo-titulo-oficial');
+    const titulo = tituloEl ? tituloEl.textContent.trim() : carpeta;
+
+    return { campos, titulo };
+  }
+
+  window.listarCarpetasGithub = listarCarpetasGithub;
+  window.abrirDocumentoGithub = abrirDocumentoGithub;
 })();
 </script>
 
