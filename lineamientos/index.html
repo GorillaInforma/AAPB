@@ -642,6 +642,25 @@
       position: relative !important;
       top: auto !important;
     }
+    /* La regla de arriba no alcanza a vencer a .fecha-actual.is-fixed ni,
+       sobre todo, a #tres-figuras-sticky.is-fixed (que lleva un ID y por
+       tanto más especificidad), así que cuando el scroll les agrega la
+       clase "is-fixed" seguían quedando position:fixed también en
+       escritorio, flotando pegados en medio del texto en vez de fluir
+       normalmente como el encabezado. Se repite el mismo selector que
+       usa esa clase para igualar la especificidad y así sí gane aquí. */
+    .fecha-actual.is-fixed,
+    #tres-figuras-sticky.is-fixed {
+      position: relative !important;
+      top: auto !important;
+      left: auto !important;
+      right: auto !important;
+      transform: none !important;
+      margin: 0 0 18px auto !important;
+    }
+    #tres-figuras-sticky.is-fixed {
+      margin: 8px auto 12px auto !important;
+    }
   }
 
   /* --- MODO EDITABLE: doble clic / doble toque abre el recuadro de edición --- */
