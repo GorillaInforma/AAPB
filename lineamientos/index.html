@@ -182,18 +182,20 @@
     mix-blend-mode: normal;
   }
 
-  /* Marca de agua sello gris - confinada al bloque de contenido, casi transparente.
-     El tamaño real se ajusta por JavaScript según el alto/ancho disponible
-     (ver script "ajustarMarcaAgua"); estos valores son solo el punto de partida
-     antes de que corra el script. */
+  /* Marca de agua sello gris - fija respecto a la pantalla, casi
+     transparente, para que se vea en cualquier punto del scroll sobre
+     el contenido (no solo cuando ese bloque de texto pasa por el centro).
+     El tamaño real se ajusta por JavaScript según el ancho/alto reales
+     de la pantalla (ver script "ajustarMarcaAgua"); estos valores son
+     solo el punto de partida antes de que corra el script. */
   .marca-agua-sello {
-    position: absolute;
+    position: fixed;
     top: 50%;
     left: 50%;
     width: min(70vw, 500px);
     height: min(70vw, 500px);
-    max-width: 100%;
-    max-height: 100%;
+    max-width: 92vw;
+    max-height: 92vh;
     transform: translate(-50%, -50%);
     z-index: 0;
     pointer-events: none;
@@ -1271,36 +1273,33 @@
 
 <script>
 (function(){
-  // --- Ajustar el tamaño de la marca de agua según el espacio real disponible ---
-  const contenedor = document.querySelector('.cuerpo-con-marca');
+  // --- Ajustar el tamaño de la marca de agua según el tamaño real de la
+  //     pantalla (ya no del bloque de contenido: al ser "fixed" respecto
+  //     al viewport, debe verse igual sin importar en qué parte del
+  //     scroll esté el usuario) ---
   const marca = document.querySelector('.marca-agua-sello');
-  const campoContenido = document.getElementById('campo-contenido');
-  if (!contenedor || !marca) return;
+  if (!marca) return;
 
   function ajustarMarcaAgua() {
-    const ancho = contenedor.clientWidth;
-    const alto = contenedor.clientHeight;
+    const ancho = window.innerWidth;
+    const alto = window.innerHeight;
     if (!ancho || !alto) return;
-    // Usamos el lado más corto del bloque para que el círculo siempre
-    // quepa completo, con un margen del 12% respecto a ese lado.
-    let tamano = Math.min(ancho, alto) * 0.88;
+    // Usamos el lado más corto de la pantalla para que el círculo siempre
+    // quepa completo, con un margen respecto a ese lado.
+    let tamano = Math.min(ancho, alto) * 0.6;
     tamano = Math.max(80, Math.min(tamano, 500));
     marca.style.width = tamano + 'px';
     marca.style.height = tamano + 'px';
   }
 
-  // Ejecutar al cargar, al redimensionar y cada vez que cambie el texto
+  // Ejecutar al cargar y al redimensionar/rotar la pantalla
   window.addEventListener('load', ajustarMarcaAgua);
   window.addEventListener('resize', ajustarMarcaAgua);
-  if (campoContenido) {
-    campoContenido.addEventListener('input', ajustarMarcaAgua);
-  }
+  window.addEventListener('orientationchange', ajustarMarcaAgua);
   // Reajustar tras restaurar un borrador guardado o un documento guardado
   window.addEventListener('pageshow', ajustarMarcaAgua);
-  const observador = new MutationObserver(ajustarMarcaAgua);
-  observador.observe(contenedor, { childList: true, subtree: true, characterData: true });
 
-  // Varios intentos iniciales por si las fuentes tardan en cargar y cambian la altura
+  // Varios intentos iniciales por si las fuentes tardan en cargar
   setTimeout(ajustarMarcaAgua, 0);
   setTimeout(ajustarMarcaAgua, 150);
   setTimeout(ajustarMarcaAgua, 500);
