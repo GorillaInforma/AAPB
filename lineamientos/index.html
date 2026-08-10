@@ -1740,6 +1740,7 @@
   async function ghFetch(path, token, options = {}) {
     const resp = await fetch(API + path, {
       ...options,
+      cache: 'no-store',
       headers: {
         'Authorization': 'Bearer ' + token,
         'Accept': 'application/vnd.github+json',
@@ -1751,7 +1752,7 @@
   }
 
   async function obtenerShaSiExiste(pathEnRepo, branch, token) {
-    const resp = await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${pathEnRepo}?ref=${encodeURIComponent(branch)}`, token);
+    const resp = await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${pathEnRepo}?ref=${encodeURIComponent(branch)}&_=${Date.now()}`, token);
     if (resp.status === 200) {
       const data = await resp.json();
       return data.sha || null;
@@ -1779,7 +1780,7 @@
   }
 
   async function existeArchivoEnCarpeta(pathEnRepo, branch, token) {
-    const resp = await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${pathEnRepo}?ref=${encodeURIComponent(branch)}`, token);
+    const resp = await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${pathEnRepo}?ref=${encodeURIComponent(branch)}&_=${Date.now()}`, token);
     return resp.status === 200;
   }
 
@@ -1899,7 +1900,7 @@
       const repoData = await repoResp.json();
       const branch = repoData.default_branch || 'main';
 
-      const listaResp = await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${carpeta}?ref=${encodeURIComponent(branch)}`, token);
+      const listaResp = await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${carpeta}?ref=${encodeURIComponent(branch)}&_=${Date.now()}`, token);
       if (listaResp.status === 404) {
         // No hay nada subido en esa carpeta: no hay error, simplemente no hay nada que borrar.
         return true;
@@ -1946,7 +1947,7 @@
 
   async function listarCarpetasGithub() {
     const { token, branch } = await obtenerBranchYToken();
-    const listaResp = await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents?ref=${encodeURIComponent(branch)}`, token);
+    const listaResp = await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents?ref=${encodeURIComponent(branch)}&_=${Date.now()}`, token);
     if (!listaResp.ok) {
       throw new Error(`No se pudo leer el repositorio (${listaResp.status}).`);
     }
@@ -1959,7 +1960,7 @@
 
   async function abrirDocumentoGithub(carpeta) {
     const { token, branch } = await obtenerBranchYToken();
-    const resp = await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${carpeta}/index.html?ref=${encodeURIComponent(branch)}`, token);
+    const resp = await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${carpeta}/index.html?ref=${encodeURIComponent(branch)}&_=${Date.now()}`, token);
     if (!resp.ok) {
       throw new Error(`No se pudo leer ${carpeta}/index.html (${resp.status}).`);
     }
