@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Detección de negocios cercanos (60m)</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    background: #0f1115;
+    color: #e7e9ee;
+    padding: 20px;
+  }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  p.sub { color: #9aa0ab; font-size: 13px; margin: 0 0 16px; }
+  #map {
+    width: 100%;
+    height: 420px;
+    border-radius: 12px;
+    border: 1px solid #262b36;
+  }
+  .controls {
+    display: flex;
+    gap: 10px;
+    margin: 14px 0;
+    flex-wrap: wrap;
+  }
+  button {
+    background: #3a6df0;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  button:disabled { background: #2a2f3a; color: #6a7080; cursor: not-allowed; }
+  button.secondary { background: #262b36; }
+  select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    background: #161a22;
+    color: #e7e9ee;
+    border: 1px solid #262b36;
+    font-size: 14px;
+    margin-top: 10px;
+  }
+  .status {
+    font-size: 13px;
+    color: #9aa0ab;
+    margin-top: 8px;
+    min-height: 18px;
+  }
+  .preview {
+    margin-top: 14px;
+  }
+  .preview img {
+    max-width: 100%;
+    border-radius: 10px;
+    border: 1px solid #262b36;
+  }
+  .card {
+    background: #161a22;
+    border: 1px solid #262b36;
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 14px;
+  }
+  .card h3 { margin: 0 0 8px; font-size: 14px; }
+  code { color: #8fb3ff; }
+</style>
+</head>
+<body>
+
+<h1>Negocios cercanos (radio ~60m)</h1>
+<p class="sub">Mapa con OpenStreetMap (sin API key ni registro) + captura de pantalla + detección con Groq Vision.</p>
+
+<div id="map"></div>
+
+<div class="controls">
+  <button id="btnCapture">📸 Capturar zona y detectar negocios</button>
+  <button id="btnRecenter" class="secondary">Recentrar en mi ubicación</button>
+</div>
+<div class="status" id="status">Esperando ubicación…</div>
+
+<div class="preview" id="previewWrap" style="display:none;">
+  <img id="previewImg" alt="Captura enviada a Groq" />
+</div>
+
+<div class="card" id="resultCard" style="display:none;">
+  <h3>Negocios detectados</h3>
+  <select id="businessSelect"></select>
+</div>
+
+<div class="card">
+  <h3>Configuración</h3>
+  <p class="sub" style="margin:0;">
+    Pega tu API key de Groq (console.groq.com). No se envía a ningún servidor propio, solo a
+    <code>api.groq.com</code> directamente desde tu navegador.
+  </p>
+  <input type="password" id="groqKey" placeholder="gsk_..." style="width:100%;padding:10px;border-radius:8px;background:#0f1115;color:#e7e9ee;border:1px solid #262b36;margin-top:8px;">
+</div>
+
+<script>
+const statusEl = document.getElementById('status');
+const btnCapture = document.getElementById('btnCapture');
+const btnRecenter = document.getElementById('btnRecenter');
+const previewWrap = document.getElementById('previewWrap');
+const previewImg = document.getElementById('previewImg');
+const resultCard = document.getElementById('resultCard');
+const businessSelect = document.getElementById('businessSelect');
+const groqKeyInput = document.getElementById('groqKey');
+
+let map, marker, circle, userLat, userLng;
+
+// Mapa base: OpenStreetMap tiles, sin API key ni registro
+map = L.map('map').setView([19.0414, -98.2063], 19); // fallback: Puebla, se recentra al obtener ubicación
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 20,
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+function setLocation(lat, lng) {
+  userLat = lat; userLng = lng;
+  map.setView([lat, lng], 20);
+  if (marker) map.removeLayer(marker);
+  if (circle) map.removeLayer(circle);
+  marker = L.marker([lat, lng]).addTo(map);
+  circle = L.circle([lat, lng], { radius: 60, color: '#3a6df0', fillOpacity: 0.08 }).addTo(map);
+  statusEl.textContent = 'Ubicación centrada. Radio de referencia: 60 metros.';
+}
+
+function locate() {
+  statusEl.textContent = 'Obteniendo ubicación…';
+  if (!navigator.geolocation) {
+    statusEl.textContent = 'Este navegador no soporta geolocalización.';
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    (pos) => setLocation(pos.coords.latitude, pos.coords.longitude),
+    (err) => { statusEl.textContent = 'No se pudo obtener ubicación: ' + err.message; },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+}
+locate();
+btnRecenter.addEventListener('click', locate);
+
+// --- Captura de pantalla (Screen Capture API) ---
+async function captureMapScreenshot() {
+  const mapEl = document.getElementById('map');
+  const rect = mapEl.getBoundingClientRect();
+
+  const stream = await navigator.mediaDevices.getDisplayMedia({
+    video: { frameRate: 1 },
+    preferCurrentTab: true // Chrome: sugiere "esta pestaña" directamente
+  });
+
+  const video = document.createElement('video');
+  video.srcObject = stream;
+  await video.play();
+  // esperar a que el primer frame esté listo
+  await new Promise(r => setTimeout(r, 250));
+
+  const track = stream.getVideoTracks()[0];
+  const settings = track.getSettings();
+  const capturedW = settings.width || video.videoWidth;
+  const capturedH = settings.height || video.videoHeight;
+
+  // Escala entre lo capturado (resolución real de pantalla) y el layout CSS
+  const scaleX = capturedW / window.innerWidth;
+  const scaleY = capturedH / window.innerHeight;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = rect.width * scaleX;
+  canvas.height = rect.height * scaleY;
+  const ctx = canvas.getContext('2d');
+
+  ctx.drawImage(
+    video,
+    rect.left * scaleX, rect.top * scaleY, rect.width * scaleX, rect.height * scaleY,
+    0, 0, canvas.width, canvas.height
+  );
+
+  track.stop();
+
+  return canvas.toDataURL('image/jpeg', 0.85);
+}
+
+// --- Envío a Groq Vision ---
+async function detectBusinesses(base64Image) {
+  const apiKey = groqKeyInput.value.trim();
+  if (!apiKey) throw new Error('Falta la API key de Groq.');
+
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + apiKey
+    },
+    body: JSON.stringify({
+      model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: 'Analiza esta captura de un mapa. Devuelve SOLO un JSON array (sin texto adicional, sin markdown) con los negocios o puntos de interés visibles, cada uno como {"nombre": "...", "tipo": "..."}. Si no detectas ninguno con certeza, devuelve un array vacío [].'
+            },
+            {
+              type: 'image_url',
+              image_url: { url: base64Image }
+            }
+          ]
+        }
+      ],
+      temperature: 0.2,
+      max_tokens: 500
+    })
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error('Groq API error ' + response.status + ': ' + errText);
+  }
+
+  const data = await response.json();
+  let raw = data.choices[0].message.content.trim();
+  raw = raw.replace(/```json|```/g, '').trim();
+
+  let list;
+  try {
+    list = JSON.parse(raw);
+  } catch (e) {
+    throw new Error('No se pudo interpretar la respuesta como JSON: ' + raw);
+  }
+  return list;
+}
+
+btnCapture.addEventListener('click', async () => {
+  resultCard.style.display = 'none';
+  previewWrap.style.display = 'none';
+  businessSelect.innerHTML = '';
+
+  try {
+    btnCapture.disabled = true;
+    statusEl.textContent = 'Elige "esta pestaña" en el diálogo de compartir…';
+
+    const imgData = await captureMapScreenshot();
+    previewImg.src = imgData;
+    previewWrap.style.display = 'block';
+
+    statusEl.textContent = 'Analizando con Groq…';
+    const businesses = await detectBusinesses(imgData);
+
+    if (!businesses.length) {
+      statusEl.textContent = 'No se detectaron negocios claros en esta captura. Prueba acercando más el zoom.';
+    } else {
+      businesses.forEach(b => {
+        const opt = document.createElement('option');
+        opt.value = b.nombre;
+        opt.textContent = b.nombre + (b.tipo ? ' — ' + b.tipo : '');
+        businessSelect.appendChild(opt);
+      });
+      resultCard.style.display = 'block';
+      statusEl.textContent = businesses.length + ' negocio(s) detectado(s).';
+    }
+  } catch (err) {
+    statusEl.textContent = 'Error: ' + err.message;
+    console.error(err);
+  } finally {
+    btnCapture.disabled = false;
+  }
+});
+</script>
+
+</body>
+</html>
