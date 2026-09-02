@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "functions": {
+    "api/generar-pdf.js": {
+      "memory": 1024,
+      "maxDuration": 45
+    }
+  },
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)",     "dest": "/public/$1" }
+  ]
+}
