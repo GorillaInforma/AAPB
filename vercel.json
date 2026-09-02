@@ -1,1 +1,9 @@
 { "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }] }
+{
+  "rewrites": [
+    {
+      "source": "/A3CC.EquipoNo.3/:path*",
+      "destination": "https://a3cc-equipono3.vercel.app/:path*"
+    }
+  ]
+}
