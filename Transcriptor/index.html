@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Transcriptor</title>
+<style>
+  :root{
+    --bg:#101418;
+    --panel:#171c22;
+    --line:#262d35;
+    --ink:#eef1f4;
+    --ink-dim:#8b96a3;
+    --accent:#3fb28f;
+    --accent-dim:#245c4a;
+    --danger:#d9694f;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .card{
+    width:100%;
+    max-width:560px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:28px;
+  }
+  h1{
+    font-size:17px;
+    font-weight:600;
+    margin:0 0 20px;
+    color:var(--ink-dim);
+    letter-spacing:0.2px;
+  }
+
+  /* Dropzone */
+  .drop{
+    border:1.5px dashed var(--line);
+    border-radius:12px;
+    padding:36px 20px;
+    text-align:center;
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .drop:hover, .drop.drag{
+    border-color:var(--accent);
+    background:rgba(63,178,143,0.06);
+  }
+  .drop input{display:none;}
+  .drop .icon{
+    width:40px;height:40px;margin:0 auto 12px;
+    border-radius:50%;
+    background:var(--accent-dim);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .drop .icon svg{width:18px;height:18px;stroke:var(--accent);}
+  .drop p{margin:0;color:var(--ink-dim);font-size:14px;}
+  .drop .fname{color:var(--ink);font-weight:600;font-size:15px;margin-bottom:4px;}
+
+  /* Waveform / progress */
+  .wave{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:3px;
+    height:48px;
+    margin:24px 0 8px;
+  }
+  .wave span{
+    width:3px;
+    background:var(--accent);
+    border-radius:2px;
+    animation:bounce 1.1s ease-in-out infinite;
+    opacity:.85;
+  }
+  .wave span:nth-child(1){height:10px;animation-delay:-1.0s}
+  .wave span:nth-child(2){height:22px;animation-delay:-0.9s}
+  .wave span:nth-child(3){height:34px;animation-delay:-0.8s}
+  .wave span:nth-child(4){height:44px;animation-delay:-0.7s}
+  .wave span:nth-child(5){height:28px;animation-delay:-0.6s}
+  .wave span:nth-child(6){height:38px;animation-delay:-0.5s}
+  .wave span:nth-child(7){height:20px;animation-delay:-0.4s}
+  .wave span:nth-child(8){height:44px;animation-delay:-0.3s}
+  .wave span:nth-child(9){height:16px;animation-delay:-0.2s}
+  .wave span:nth-child(10){height:26px;animation-delay:-0.1s}
+  .wave span:nth-child(11){height:12px;animation-delay:0s}
+  @keyframes bounce{
+    0%,100%{transform:scaleY(0.35);}
+    50%{transform:scaleY(1);}
+  }
+  .status-line{
+    text-align:center;
+    color:var(--ink-dim);
+    font-size:13px;
+    margin-bottom:4px;
+  }
+  .status-line b{color:var(--ink);font-weight:600;}
+  .bar-track{
+    height:4px;
+    background:var(--line);
+    border-radius:2px;
+    overflow:hidden;
+    margin-top:14px;
+  }
+  .bar-fill{
+    height:100%;
+    width:0%;
+    background:var(--accent);
+    transition:width .25s ease;
+  }
+
+  /* Output */
+  textarea{
+    width:100%;
+    min-height:220px;
+    resize:vertical;
+    background:#0d1116;
+    color:var(--ink);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:14px;
+    font-size:14.5px;
+    line-height:1.55;
+    font-family:inherit;
+  }
+  textarea:focus{outline:1.5px solid var(--accent);}
+  .actions{
+    display:flex;
+    gap:8px;
+    margin-top:14px;
+  }
+  button{
+    font-family:inherit;
+    font-size:13.5px;
+    font-weight:600;
+    border-radius:9px;
+    border:1px solid var(--line);
+    background:transparent;
+    color:var(--ink);
+    padding:10px 14px;
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  button:hover{border-color:var(--accent);}
+  button.primary{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#0a1210;
+  }
+  button.primary:hover{background:#4cc49e;}
+  button.ghost{color:var(--ink-dim);}
+  .hidden{display:none !important;}
+  .err{
+    color:var(--danger);
+    font-size:13px;
+    text-align:center;
+    margin-top:14px;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>Transcriptor</h1>
+
+  <div id="view-idle">
+    <label class="drop" id="drop">
+      <input type="file" id="file-input" accept="audio/*,.m4a" />
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14"/></svg>
+      </div>
+      <p>Toca para elegir un audio, o suéltalo aquí</p>
+    </label>
+    <p class="err hidden" id="err"></p>
+  </div>
+
+  <div id="view-busy" class="hidden">
+    <div class="wave"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    <p class="status-line" id="status">Preparando…</p>
+    <div class="bar-track"><div class="bar-fill" id="bar"></div></div>
+  </div>
+
+  <div id="view-done" class="hidden">
+    <textarea id="output" spellcheck="true"></textarea>
+    <div class="actions">
+      <button class="primary" id="copy-btn">Copiar</button>
+      <button id="download-btn">Descargar .txt</button>
+      <button class="ghost" id="reset-btn">Nuevo audio</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { pipeline, env } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2/+esm";
+
+env.allowLocalModels = false;
+
+const viewIdle = document.getElementById('view-idle');
+const viewBusy = document.getElementById('view-busy');
+const viewDone = document.getElementById('view-done');
+const drop = document.getElementById('drop');
+const fileInput = document.getElementById('file-input');
+const statusEl = document.getElementById('status');
+const barEl = document.getElementById('bar');
+const errEl = document.getElementById('err');
+const output = document.getElementById('output');
+
+let transcriber = null;
+const fileProgress = {};
+
+function showErr(msg){
+  errEl.textContent = msg;
+  errEl.classList.remove('hidden');
+}
+
+function setBusy(msg, pct){
+  viewIdle.classList.add('hidden');
+  viewDone.classList.add('hidden');
+  viewBusy.classList.remove('hidden');
+  statusEl.innerHTML = msg;
+  if(pct != null) barEl.style.width = pct + '%';
+}
+
+function setDone(text){
+  viewBusy.classList.add('hidden');
+  viewDone.classList.remove('hidden');
+  output.value = text;
+}
+
+function limpiarTexto(texto){
+  let t = texto.trim().replace(/\s+/g, ' ');
+  t = t.replace(/\s+([,.;:!?])/g, '$1');
+  t = t.replace(/\b(eh+|em+|este|o sea|osea|umm+|ajá)\b(?:[,\s]+\1\b)+/gi, '$1');
+  t = t.replace(/(^\s*[a-záéíóúñ]|[.!?]\s+[a-záéíóúñ])/g, c => c.toUpperCase());
+  return t;
+}
+
+async function resampleTo16k(float32, nativeRate){
+  const offline = new OfflineAudioContext(1, Math.ceil(float32.length * 16000 / nativeRate), 16000);
+  const buffer = offline.createBuffer(1, float32.length, nativeRate);
+  buffer.getChannelData(0).set(float32);
+  const src = offline.createBufferSource();
+  src.buffer = buffer;
+  src.connect(offline.destination);
+  src.start(0);
+  const rendered = await offline.startRendering();
+  return rendered.getChannelData(0);
+}
+
+// Fallback for browsers (mostly mobile) where decodeAudioData can't handle the container.
+// Plays the file silently in real time and captures raw samples instead.
+function decodeViaPlayback(file, onProgress){
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const audioEl = new Audio(url);
+    audioEl.preload = 'auto';
+    audioEl.muted = true;
+
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = ctx.createMediaElementSource(audioEl);
+    const processor = ctx.createScriptProcessor(4096, 1, 1);
+    const silentGain = ctx.createGain();
+    silentGain.gain.value = 0;
+
+    source.connect(processor);
+    processor.connect(silentGain);
+    silentGain.connect(ctx.destination);
+
+    const chunks = [];
+    let total = 0;
+
+    processor.onaudioprocess = (e) => {
+      const data = e.inputBuffer.getChannelData(0);
+      chunks.push(new Float32Array(data));
+      total += data.length;
+      if (audioEl.duration) onProgress(audioEl.currentTime, audioEl.duration);
+    };
+
+    const finish = () => {
+      try{ processor.disconnect(); source.disconnect(); silentGain.disconnect(); }catch(_e){}
+      const merged = new Float32Array(total);
+      let offset = 0;
+      for (const c of chunks){ merged.set(c, offset); offset += c.length; }
+      const nativeRate = ctx.sampleRate;
+      URL.revokeObjectURL(url);
+      ctx.close();
+      resolve({ data: merged, sampleRate: nativeRate });
+    };
+
+    audioEl.onended = finish;
+    audioEl.onerror = () => reject(new Error('El navegador no puede leer este audio'));
+    audioEl.play().catch(reject);
+  });
+}
+
+async function decodeTo16kMono(file, onProgress){
+  const buf = await file.arrayBuffer();
+  try{
+    const tmpCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const audioBuffer = await tmpCtx.decodeAudioData(buf.slice(0));
+    tmpCtx.close();
+    return await resampleTo16k(audioBuffer.getChannelData(0), audioBuffer.sampleRate);
+  } catch(fastPathError){
+    const { data, sampleRate } = await decodeViaPlayback(file, onProgress);
+    return await resampleTo16k(data, sampleRate);
+  }
+}
+
+async function ensureModel(){
+  if (transcriber) return transcriber;
+  transcriber = await pipeline('automatic-speech-recognition', 'onnx-community/whisper-small', {
+    dtype: 'q8',
+    progress_callback: (p) => {
+      if (p.status === 'progress' && p.file){
+        fileProgress[p.file] = p.progress || 0;
+        const vals = Object.values(fileProgress);
+        const avg = vals.reduce((a,b)=>a+b,0) / vals.length;
+        setBusy('Descargando modelo… <b>' + Math.round(avg) + '%</b>', avg);
+      } else if (p.status === 'ready' || p.status === 'done'){
+        setBusy('Modelo listo, iniciando…', 100);
+      }
+    }
+  });
+  return transcriber;
+}
+
+async function handleFile(file){
+  if (!file) return;
+  errEl.classList.add('hidden');
+  try{
+    setBusy('Leyendo audio…', null);
+    const audioData = await decodeTo16kMono(file, (cur, dur) => {
+      const pct = Math.min(100, Math.round((cur / dur) * 100));
+      const fmt = (s) => { s = Math.floor(s); return String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0'); };
+      setBusy('Leyendo audio… <b>' + fmt(cur) + ' / ' + fmt(dur) + '</b>', pct);
+    });
+
+    setBusy('Cargando modelo de transcripción…', 0);
+    const model = await ensureModel();
+
+    setBusy('Transcribiendo…', null);
+    const result = await model(audioData, {
+      language: 'spanish',
+      task: 'transcribe',
+      chunk_length_s: 30,
+      stride_length_s: 5,
+      return_timestamps: false,
+    });
+
+    const limpio = limpiarTexto(result.text || '');
+    setDone(limpio);
+  } catch(e){
+    console.error(e);
+    viewBusy.classList.add('hidden');
+    viewIdle.classList.remove('hidden');
+    showErr('No se pudo transcribir: ' + (e.message || e));
+  }
+}
+
+fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+['dragover','dragenter'].forEach(evt => drop.addEventListener(evt, (e) => {
+  e.preventDefault(); drop.classList.add('drag');
+}));
+['dragleave','drop'].forEach(evt => drop.addEventListener(evt, (e) => {
+  e.preventDefault(); drop.classList.remove('drag');
+}));
+drop.addEventListener('drop', (e) => {
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+});
+
+document.getElementById('copy-btn').addEventListener('click', () => {
+  navigator.clipboard.writeText(output.value);
+});
+document.getElementById('download-btn').addEventListener('click', () => {
+  const blob = new Blob([output.value], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'transcripcion.txt';
+  a.click();
+});
+document.getElementById('reset-btn').addEventListener('click', () => {
+  fileInput.value = '';
+  viewDone.classList.add('hidden');
+  viewIdle.classList.remove('hidden');
+});
+
+const AUTO_FILE = 'chume.m4a';
+
+async function tryAutoLoad(){
+  viewIdle.classList.add('hidden');
+  setBusy('Buscando ' + AUTO_FILE + '…', null);
+  try{
+    const res = await fetch(AUTO_FILE, { cache: 'no-store' });
+    if (!res.ok) throw new Error('not found');
+    const blob = await res.blob();
+    const file = new File([blob], AUTO_FILE, { type: blob.type || 'audio/mp4' });
+    await handleFile(file);
+  } catch(e){
+    viewBusy.classList.add('hidden');
+    viewIdle.classList.remove('hidden');
+  }
+}
+
+tryAutoLoad();
+</script>
+</body>
+</html>
