@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preparando documento...</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f7f7f7;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: #222;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 3rem 4rem;
+      text-align: center;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.08);
+      max-width: 400px;
+      width: 90%;
+    }
+
+    .icon {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 1.5rem;
+      animation: pulso 1.4s ease-in-out infinite;
+    }
+
+    @keyframes pulso {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.5; transform: scale(0.92); }
+    }
+
+    h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    p {
+      font-size: 0.9rem;
+      color: #777;
+      line-height: 1.5;
+    }
+
+    .barra {
+      margin-top: 2rem;
+      height: 4px;
+      background: #eee;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .progreso {
+      height: 100%;
+      width: 0%;
+      background: #4f46e5;
+      border-radius: 99px;
+      animation: cargar 3s ease forwards;
+    }
+
+    @keyframes cargar {
+      0%   { width: 0%; }
+      60%  { width: 75%; }
+      90%  { width: 90%; }
+      100% { width: 100%; }
+    }
+
+    .error {
+      display: none;
+      margin-top: 1.5rem;
+      padding: 0.75rem 1rem;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      color: #b91c1c;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <svg class="icon" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="56" height="56" rx="12" fill="#ede9fe"/>
+      <path d="M18 38h20M28 18v14m0 0l-5-5m5 5l5-5" stroke="#4f46e5" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+
+    <h1>Preparando tu documento</h1>
+    <p>Tu PDF se está generando.<br>La descarga comenzará en unos segundos.</p>
+
+    <div class="barra"><div class="progreso"></div></div>
+    <div class="error" id="msg-error">
+      No se pudo generar el PDF. Intenta de nuevo más tarde.
+    </div>
+  </div>
+
+  <script>
+    async function iniciarDescarga() {
+      try {
+        const res = await fetch('/api/generar-pdf');
+
+        if (!res.ok) throw new Error('Error del servidor');
+
+        const blob = await res.blob();
+        const url  = URL.createObjectURL(blob);
+
+        // Descarga automática
+        const a = document.createElement('a');
+        a.href     = url;
+        a.download = 'documento.pdf';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        // Abrir en nueva pestaña
+        window.open(url, '_blank');
+
+      } catch (err) {
+        document.getElementById('msg-error').style.display = 'block';
+        console.error(err);
+      }
+    }
+
+    // Espera un momento para que la animación arranque antes de la petición
+    setTimeout(iniciarDescarga, 800);
+  </script>
+</body>
+</html>
