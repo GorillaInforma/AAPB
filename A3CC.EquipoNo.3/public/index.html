@@ -106,7 +106,10 @@
   <script>
     async function iniciarDescarga() {
       try {
-        const res = await fetch('/api/generar-pdf');
+        const base = window.location.pathname.includes('A3CC.EquipoNo.3')
+          ? '/A3CC.EquipoNo.3/api/generar-pdf'
+          : '/api/generar-pdf';
+        const res = await fetch(base);
 
         if (!res.ok) throw new Error('Error del servidor');
 
