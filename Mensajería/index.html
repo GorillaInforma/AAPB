@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Mensajería</title>
+<style>
+  :root{
+    --navy:#16324F;
+    --navy-dark:#0E2338;
+    --accent:#2F6690;
+    --bg:#F5F6F8;
+    --surface:#FFFFFF;
+    --border:#E3E6EA;
+    --text:#1C1F26;
+    --text-muted:#6B7280;
+    --danger:#B3261E;
+    --ok:#2E7D5B;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+  }
+  #app{
+    max-width:520px;
+    margin:0 auto;
+    height:100vh;
+    height:100dvh;
+    display:flex;
+    flex-direction:column;
+    background:var(--surface);
+    box-shadow:0 0 24px rgba(0,0,0,0.06);
+    position:relative;
+    overflow:hidden;
+  }
+  .pantalla{
+    display:none;
+    flex-direction:column;
+    height:100%;
+  }
+  .pantalla.activa{display:flex;}
+
+  /* Encabezado */
+  header.barra{
+    background:var(--navy);
+    color:#fff;
+    padding:14px 16px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-shrink:0;
+  }
+  header.barra h1{
+    font-size:18px;
+    font-weight:600;
+    margin:0;
+    flex:1;
+    letter-spacing:0.2px;
+  }
+  .icono-btn{
+    background:transparent;
+    border:none;
+    color:#fff;
+    padding:6px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:8px;
+  }
+  .icono-btn:hover{background:rgba(255,255,255,0.12);}
+  .icono-btn svg{width:22px;height:22px;}
+
+  /* Carga inicial */
+  #pantalla-carga{align-items:center;justify-content:center;gap:14px;}
+  .spinner{
+    width:34px;height:34px;
+    border:3px solid var(--border);
+    border-top-color:var(--accent);
+    border-radius:50%;
+    animation:girar 0.8s linear infinite;
+  }
+  @keyframes girar{to{transform:rotate(360deg);}}
+  #pantalla-carga p{color:var(--text-muted);font-size:14px;}
+
+  /* Bienvenida */
+  #pantalla-bienvenida{align-items:center;justify-content:center;padding:32px;text-align:center;gap:18px;}
+  #pantalla-bienvenida h2{margin:0;font-size:22px;font-weight:600;}
+  #pantalla-bienvenida p{color:var(--text-muted);font-size:14px;margin:0;line-height:1.5;}
+  .btn-primario{
+    background:var(--navy);
+    color:#fff;
+    border:none;
+    padding:13px 20px;
+    border-radius:10px;
+    font-size:15px;
+    font-weight:600;
+    cursor:pointer;
+    width:100%;
+  }
+  .btn-primario:hover{background:var(--navy-dark);}
+  .btn-secundario{
+    background:transparent;
+    color:var(--accent);
+    border:none;
+    font-size:14px;
+    cursor:pointer;
+    padding:8px;
+  }
+  .caja-datos-cuenta{
+    background:var(--bg);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:16px;
+    width:100%;
+    text-align:left;
+    font-size:14px;
+  }
+  .caja-datos-cuenta div{margin-bottom:6px;}
+  .caja-datos-cuenta strong{color:var(--navy);}
+
+  input.campo{
+    width:100%;
+    padding:12px 14px;
+    border:1px solid var(--border);
+    border-radius:9px;
+    font-size:15px;
+    color:var(--text);
+    background:#fff;
+  }
+  input.campo:focus{outline:2px solid var(--accent);outline-offset:1px;}
+  label.etiqueta{font-size:13px;color:var(--text-muted);display:block;margin-bottom:5px;text-align:left;}
+  .grupo-campo{width:100%;text-align:left;margin-bottom:12px;}
+  .mensaje-error{color:var(--danger);font-size:13px;margin:0;}
+  .mensaje-ok{color:var(--ok);font-size:13px;margin:0;}
+
+  /* Lista de chats */
+  #lista-chats{flex:1;overflow-y:auto;}
+  .fila-chat{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px 16px;
+    border-bottom:1px solid var(--border);
+    cursor:pointer;
+  }
+  .fila-chat:hover{background:var(--bg);}
+  .avatar{
+    width:46px;height:46px;
+    border-radius:50%;
+    background:var(--accent);
+    color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:600;font-size:17px;
+    flex-shrink:0;
+  }
+  .info-chat{flex:1;min-width:0;}
+  .info-chat .nombre{font-weight:600;font-size:15px;}
+  .info-chat .previa{
+    color:var(--text-muted);font-size:13px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .meta-chat{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
+  .hora-chat{font-size:12px;color:var(--text-muted);}
+  .badge-noleido{
+    background:var(--accent);color:#fff;
+    font-size:11px;font-weight:700;
+    min-width:18px;height:18px;border-radius:9px;
+    display:flex;align-items:center;justify-content:center;
+    padding:0 5px;
+  }
+  #estado-vacio{
+    padding:40px 24px;text-align:center;color:var(--text-muted);font-size:14px;
+  }
+
+  /* Conversación */
+  #vista-conversacion header.barra .nombre-conv{font-size:16px;font-weight:600;}
+  #mensajes{
+    flex:1;
+    overflow-y:auto;
+    padding:14px 12px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    background:var(--bg);
+  }
+  .burbuja{
+    max-width:75%;
+    padding:9px 12px;
+    border-radius:12px;
+    font-size:14.5px;
+    line-height:1.4;
+    word-wrap:break-word;
+  }
+  .burbuja.propio{
+    align-self:flex-end;
+    background:var(--accent);
+    color:#fff;
+    border-bottom-right-radius:3px;
+  }
+  .burbuja.ajeno{
+    align-self:flex-start;
+    background:#fff;
+    border:1px solid var(--border);
+    border-bottom-left-radius:3px;
+  }
+  .burbuja.sistema{
+    align-self:center;
+    background:transparent;
+    color:var(--text-muted);
+    font-size:12.5px;
+    font-style:italic;
+    max-width:90%;
+    text-align:center;
+  }
+  .burbuja .hora{
+    display:block;font-size:10.5px;margin-top:3px;opacity:0.75;text-align:right;
+  }
+  .burbuja img.adjunto{max-width:100%;border-radius:8px;display:block;margin-top:2px;}
+  .burbuja audio{max-width:100%;margin-top:2px;}
+  .burbuja a.archivo{
+    display:flex;align-items:center;gap:8px;
+    color:inherit;text-decoration:none;
+    background:rgba(0,0,0,0.05);
+    padding:8px 10px;border-radius:8px;margin-top:2px;
+  }
+  .burbuja.propio a.archivo{background:rgba(255,255,255,0.18);}
+
+  .barra-entrada{
+    display:flex;align-items:center;gap:8px;
+    padding:10px 12px;
+    border-top:1px solid var(--border);
+    background:#fff;
+    flex-shrink:0;
+    position:relative;
+  }
+  .barra-entrada input[type=text]{
+    flex:1;
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:10px 15px;
+    font-size:14.5px;
+  }
+  .barra-entrada input[type=text]:focus{outline:2px solid var(--accent);outline-offset:1px;}
+  .btn-circular{
+    width:40px;height:40px;border-radius:50%;
+    border:none;background:var(--bg);color:var(--navy);
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;flex-shrink:0;
+  }
+  .btn-circular.enviar{background:var(--navy);color:#fff;}
+  .btn-circular.grabando{background:var(--danger);color:#fff;}
+  .btn-circular svg{width:20px;height:20px;}
+
+  .menu-adjuntos{
+    position:absolute;
+    bottom:58px;left:12px;
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:12px;
+    box-shadow:0 4px 18px rgba(0,0,0,0.12);
+    display:none;
+    overflow:hidden;
+  }
+  .menu-adjuntos.abierto{display:flex;}
+  .opcion-adjunto{
+    display:flex;align-items:center;gap:10px;
+    padding:12px 16px;
+    font-size:14px;
+    cursor:pointer;
+    border-bottom:1px solid var(--border);
+    background:none;border:none;text-align:left;width:100%;color:var(--text);
+  }
+  .opcion-adjunto:last-child{border-bottom:none;}
+  .opcion-adjunto:hover{background:var(--bg);}
+  .opcion-adjunto svg{width:19px;height:19px;color:var(--accent);}
+
+  /* Cuenta */
+  #vista-cuenta .contenido-cuenta{padding:20px;overflow-y:auto;flex:1;}
+  .tarjeta{
+    background:var(--bg);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:16px;
+    margin-bottom:18px;
+  }
+  .tarjeta h3{margin:0 0 12px;font-size:14px;color:var(--navy);}
+  .fila-dato{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:14.5px;}
+  .fila-dato span.valor{font-weight:600;}
+  .toggle-clave{background:none;border:none;color:var(--accent);font-size:13px;cursor:pointer;}
+  .notif-estado{font-size:13px;color:var(--text-muted);margin-top:8px;}
+
+  ::-webkit-scrollbar{width:6px;}
+  ::-webkit-scrollbar-thumb{background:#D0D4DA;border-radius:3px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- CARGA -->
+  <div class="pantalla activa" id="pantalla-carga">
+    <div class="spinner"></div>
+    <p>Conectando…</p>
+  </div>
+
+  <!-- BIENVENIDA / CREACIÓN DE CUENTA -->
+  <div class="pantalla" id="pantalla-bienvenida">
+    <h2>Mensajería</h2>
+    <p id="texto-bienvenida">Preparando tu cuenta en este dispositivo…</p>
+    <div id="datos-cuenta-nueva" style="display:none;width:100%;">
+      <div class="caja-datos-cuenta">
+        <div><strong>Usuario:</strong> <span id="bienvenida-usuario"></span></div>
+        <div><strong>Contraseña:</strong> <span id="bienvenida-clave"></span></div>
+      </div>
+      <p style="font-size:12.5px;">Guarda estos datos. Podrás cambiarlos después en la sección Cuenta.</p>
+      <button class="btn-primario" id="btn-continuar" style="margin-top:10px;">Continuar</button>
+    </div>
+  </div>
+
+  <!-- LISTA DE CHATS (solo cuenta principal) -->
+  <div class="pantalla" id="vista-lista">
+    <header class="barra">
+      <h1>Mensajería</h1>
+      <button class="icono-btn" id="btn-ir-cuenta" aria-label="Cuenta">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.5-6 8-6s8 2 8 6"/></svg>
+      </button>
+    </header>
+    <div id="lista-chats"></div>
+    <div id="estado-vacio" style="display:none;">Aún no hay conversaciones. Cuando alguien use la aplicación, aparecerá aquí.</div>
+  </div>
+
+  <!-- CONVERSACIÓN -->
+  <div class="pantalla" id="vista-conversacion">
+    <header class="barra">
+      <button class="icono-btn" id="btn-atras-conv" aria-label="Atrás">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <h1 class="nombre-conv" id="titulo-conversacion">Mensajería</h1>
+      <button class="icono-btn" id="btn-ir-cuenta-2" aria-label="Cuenta">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.5-6 8-6s8 2 8 6"/></svg>
+      </button>
+    </header>
+    <div id="mensajes"></div>
+    <div class="barra-entrada">
+      <button class="btn-circular" id="btn-adjuntar" aria-label="Adjuntar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.5l-8.5 8.5a4.5 4.5 0 01-6.4-6.4l9-9a3 3 0 014.2 4.2l-9 9a1.5 1.5 0 01-2.1-2.1l8-8"/></svg>
+      </button>
+      <div class="menu-adjuntos" id="menu-adjuntos">
+        <button class="opcion-adjunto" id="opt-imagen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.5"/><path d="M21 16l-5-5-9 9"/></svg>
+          Imagen
+        </button>
+        <button class="opcion-adjunto" id="opt-documento">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/></svg>
+          Documento
+        </button>
+      </div>
+      <input type="file" id="input-imagen" accept="image/*" style="display:none;">
+      <input type="file" id="input-documento" style="display:none;">
+      <input type="text" id="campo-texto" placeholder="Escribe un mensaje">
+      <button class="btn-circular" id="btn-audio" aria-label="Nota de audio">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0"/><path d="M12 19v3"/></svg>
+      </button>
+      <button class="btn-circular enviar" id="btn-enviar" aria-label="Enviar">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 20l18-8L3 4v6l12 2-12 2z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- CUENTA -->
+  <div class="pantalla" id="vista-cuenta">
+    <header class="barra">
+      <button class="icono-btn" id="btn-atras-cuenta" aria-label="Atrás">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <h1>Cuenta</h1>
+    </header>
+    <div class="contenido-cuenta">
+      <div class="tarjeta">
+        <h3>Tus datos</h3>
+        <div class="fila-dato"><span>Usuario</span><span class="valor" id="cuenta-usuario"></span></div>
+        <div class="fila-dato">
+          <span>Contraseña</span>
+          <span><span class="valor" id="cuenta-clave">••••••••</span>
+          <button class="toggle-clave" id="btn-ver-clave">Mostrar</button></span>
+        </div>
+        <div class="fila-dato"><span>Rol</span><span class="valor" id="cuenta-rol"></span></div>
+      </div>
+
+      <div class="tarjeta">
+        <h3>Cambiar contraseña</h3>
+        <div class="grupo-campo">
+          <label class="etiqueta">Contraseña actual</label>
+          <input class="campo" id="clave-actual" type="password">
+        </div>
+        <div class="grupo-campo">
+          <label class="etiqueta">Nueva contraseña</label>
+          <input class="campo" id="clave-nueva" type="password">
+        </div>
+        <div class="grupo-campo">
+          <label class="etiqueta">Confirmar nueva contraseña</label>
+          <input class="campo" id="clave-confirmar" type="password">
+        </div>
+        <p class="mensaje-error" id="clave-error" style="display:none;"></p>
+        <p class="mensaje-ok" id="clave-ok" style="display:none;"></p>
+        <button class="btn-primario" id="btn-cambiar-clave">Guardar nueva contraseña</button>
+      </div>
+
+      <div class="tarjeta">
+        <h3>Notificaciones</h3>
+        <button class="btn-primario" id="btn-activar-notif">Activar notificaciones</button>
+        <p class="notif-estado" id="estado-notif"></p>
+      </div>
+
+      <div class="tarjeta">
+        <h3>Vincular este dispositivo a otra cuenta</h3>
+        <p style="font-size:12.5px;color:var(--text-muted);margin:0 0 10px;">Normalmente no necesitas esto: el dispositivo se identifica solo. Úsalo únicamente si quieres que este dispositivo pase a representar otra cuenta ya existente.</p>
+        <button class="btn-secundario" id="btn-mostrar-vinculo">Vincular una cuenta existente</button>
+        <div id="form-vinculo" style="display:none;">
+          <div class="grupo-campo">
+            <label class="etiqueta">Usuario</label>
+            <input class="campo" id="vinculo-usuario" type="text" autocomplete="off">
+          </div>
+          <div class="grupo-campo">
+            <label class="etiqueta">Contraseña</label>
+            <input class="campo" id="vinculo-clave" type="password" autocomplete="off">
+          </div>
+          <p class="mensaje-error" id="vinculo-error" style="display:none;"></p>
+          <button class="btn-primario" id="btn-confirmar-vinculo">Vincular y reiniciar</button>
+        </div>
+      </div>
+
+      <div class="tarjeta">
+        <h3>Sesión</h3>
+        <button class="btn-secundario" id="btn-cerrar-sesion" style="color:var(--danger);">Olvidar cuenta en este dispositivo</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+import {
+  getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, collection,
+  query, orderBy, onSnapshot, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAsmQ5ZjQUYatWzgxszvmEnHB5Tt9WLI34",
+  authDomain: "mensajeria-8b60a.firebaseapp.com",
+  projectId: "mensajeria-8b60a",
+  storageBucket: "mensajeria-8b60a.firebasestorage.app",
+  messagingSenderId: "206928265543",
+  appId: "1:206928265543:web:d15652e8c6f17b38a70c62"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const LIMITE_ADJUNTO = 700000; // ~700 KB en base64, margen bajo el límite de 1 MB por documento de Firestore
+
+let cuenta = null; // { username, password, rol }
+let conversacionAbiertaId = null;
+let primeraCargaLista = true;
+let primeraCargaMensajes = true;
+let desuscribirLista = null;
+let desuscribirMensajes = null;
+let grabador = null;
+let trozosAudio = [];
+
+const $ = (id) => document.getElementById(id);
+
+function mostrarPantalla(id){
+  document.querySelectorAll(".pantalla").forEach(p => p.classList.remove("activa"));
+  $(id).classList.add("activa");
+}
+
+function idAleatorio(longitud, soloDigitos=false){
+  const chars = soloDigitos ? "0123456789" : "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let s = "";
+  for(let i=0;i<longitud;i++) s += chars[Math.floor(Math.random()*chars.length)];
+  return s;
+}
+
+function formatoHora(fecha){
+  if(!fecha) return "";
+  const d = fecha.toDate ? fecha.toDate() : new Date(fecha);
+  return d.toLocaleTimeString("es-MX", {hour:"2-digit", minute:"2-digit"});
+}
+
+function inicial(nombre){
+  return (nombre||"?").charAt(0).toUpperCase();
+}
+
+/* ---------- Identidad del dispositivo ----------
+   Se guarda el mismo dato en tres lugares independientes para que, si uno
+   se borra (por ejemplo al limpiar el navegador), los otros permitan que
+   el dispositivo se siga reconociendo solo, sin pedir inicio de sesión. */
+
+function abrirAlmacenDispositivo(){
+  return new Promise((resolve, reject) => {
+    const solicitud = indexedDB.open("mensajeria_dispositivo", 1);
+    solicitud.onupgradeneeded = () => {
+      solicitud.result.createObjectStore("identidad");
+    };
+    solicitud.onsuccess = () => resolve(solicitud.result);
+    solicitud.onerror = () => reject(solicitud.error);
+  });
+}
+
+async function guardarUsuarioEnIndexedDB(username){
+  try{
+    const bd = await abrirAlmacenDispositivo();
+    const tx = bd.transaction("identidad", "readwrite");
+    tx.objectStore("identidad").put(username, "usuario");
+  }catch(e){ /* IndexedDB no disponible: seguimos con los otros métodos */ }
+}
+
+async function leerUsuarioDeIndexedDB(){
+  try{
+    const bd = await abrirAlmacenDispositivo();
+    return await new Promise((resolve) => {
+      const tx = bd.transaction("identidad", "readonly");
+      const solicitud = tx.objectStore("identidad").get("usuario");
+      solicitud.onsuccess = () => resolve(solicitud.result || null);
+      solicitud.onerror = () => resolve(null);
+    });
+  }catch(e){ return null; }
+}
+
+function guardarUsuarioEnCookie(username){
+  const diezAnios = 10 * 365 * 24 * 60 * 60;
+  document.cookie = "mensajeria_usuario=" + encodeURIComponent(username) + "; max-age=" + diezAnios + "; path=/; SameSite=Lax";
+}
+
+function leerUsuarioDeCookie(){
+  const partes = document.cookie.split("; ").find(f => f.startsWith("mensajeria_usuario="));
+  return partes ? decodeURIComponent(partes.split("=")[1]) : null;
+}
+
+async function guardarIdentidadDispositivo(username){
+  localStorage.setItem("mensajeria_cuenta", JSON.stringify({ username }));
+  guardarUsuarioEnCookie(username);
+  await guardarUsuarioEnIndexedDB(username);
+}
+
+function olvidarIdentidadDispositivo(){
+  localStorage.removeItem("mensajeria_cuenta");
+  document.cookie = "mensajeria_usuario=; max-age=0; path=/";
+  guardarUsuarioEnIndexedDB("");
+}
+
+async function leerIdentidadDispositivo(){
+  const local = localStorage.getItem("mensajeria_cuenta");
+  if(local){
+    const datos = JSON.parse(local);
+    if(datos.username) return datos.username;
+  }
+  const cookie = leerUsuarioDeCookie();
+  if(cookie) return cookie;
+  const indexado = await leerUsuarioDeIndexedDB();
+  if(indexado) return indexado;
+  return null;
+}
+
+/* ---------- Arranque ---------- */
+async function iniciar(){
+  const username = await leerIdentidadDispositivo();
+  if(username){
+    const ref = doc(db, "cuentas", username);
+    const snap = await getDoc(ref);
+    if(snap.exists()){
+      cuenta = snap.data();
+      await guardarIdentidadDispositivo(username); // reforzar en los tres almacenes
+      entrarAplicacion();
+      return;
+    }
+  }
+  mostrarPantalla("pantalla-bienvenida");
+  crearCuentaNueva();
+}
+
+async function crearCuentaNueva(){
+  const username = "user" + idAleatorio(6, true);
+  const password = idAleatorio(9);
+  const configRef = doc(db, "config", "app");
+  const configSnap = await getDoc(configRef);
+  let rol = "usuario";
+  if(!configSnap.exists()){
+    rol = "propietario";
+    await setDoc(configRef, { ownerUsername: username });
+  }
+  const nuevaCuenta = { username, password, rol, creado: serverTimestamp() };
+  await setDoc(doc(db, "cuentas", username), nuevaCuenta);
+
+  if(rol === "usuario"){
+    await setDoc(doc(db, "conversaciones", username), {
+      participante: username,
+      ultimoMensaje: "Se ha conectado a la aplicación.",
+      ultimoAutor: "sistema",
+      ultimaFecha: serverTimestamp()
+    });
+    await addDoc(collection(db, "conversaciones", username, "mensajes"), {
+      autor: "sistema", tipo: "sistema", contenido: "Se ha conectado a la aplicación.", fecha: serverTimestamp()
+    });
+  }
+
+  cuenta = { username, password, rol };
+  await guardarIdentidadDispositivo(username);
+
+  $("texto-bienvenida").textContent = "Tu cuenta quedó lista en este dispositivo.";
+  $("bienvenida-usuario").textContent = username;
+  $("bienvenida-clave").textContent = password;
+  $("datos-cuenta-nueva").style.display = "block";
+  $("opcion-login").style.display = "none";
+  $("btn-continuar").addEventListener("click", entrarAplicacion);
+}
+
+/* ---------- Entrar a la aplicación ---------- */
+function entrarAplicacion(){
+  registrarConexion();
+  if(cuenta.rol === "propietario"){
+    mostrarPantalla("vista-lista");
+    escucharListaChats();
+  }else{
+    conversacionAbiertaId = cuenta.username;
+    $("titulo-conversacion").textContent = "Mensajería";
+    mostrarPantalla("vista-conversacion");
+    escucharMensajes(conversacionAbiertaId);
+  }
+  configurarNotificaciones();
+  configurarCuenta();
+  configurarConversacion();
+}
+
+async function registrarConexion(){
+  // Marca cada apertura de la app por parte de una cuenta normal (no propietario)
+  if(cuenta.rol === "usuario"){
+    const yaAvisoEstaSesion = sessionStorage.getItem("mensajeria_aviso_conexion");
+    if(!yaAvisoEstaSesion){
+      sessionStorage.setItem("mensajeria_aviso_conexion", "1");
+    }
+  }
+}
+
+/* ---------- Lista de chats (propietario) ---------- */
+function escucharListaChats(){
+  const q = query(collection(db, "conversaciones"), orderBy("ultimaFecha", "desc"));
+  desuscribirLista = onSnapshot(q, (snap) => {
+    const contenedor = $("lista-chats");
+    contenedor.innerHTML = "";
+    $("estado-vacio").style.display = snap.empty ? "block" : "none";
+
+    snap.forEach(docSnap => {
+      const c = docSnap.data();
+      const fila = document.createElement("div");
+      fila.className = "fila-chat";
+      fila.innerHTML = `
+        <div class="avatar">${inicial(c.participante)}</div>
+        <div class="info-chat">
+          <div class="nombre">${c.participante}</div>
+          <div class="previa">${c.ultimoMensaje || ""}</div>
+        </div>
+        <div class="meta-chat">
+          <div class="hora-chat">${formatoHora(c.ultimaFecha)}</div>
+        </div>
+      `;
+      fila.addEventListener("click", () => abrirConversacion(docSnap.id));
+      contenedor.appendChild(fila);
+    });
+
+    if(!primeraCargaLista){
+      snap.docChanges().forEach(cambio => {
+        const c = cambio.data();
+        if(c.ultimoAutor && c.ultimoAutor !== cuenta.username && conversacionAbiertaId !== cambio.doc.id){
+          notificar("Nuevo mensaje de " + c.participante, c.ultimoMensaje || "");
+        }
+      });
+    }
+    primeraCargaLista = false;
+  });
+}
+
+function abrirConversacion(id){
+  conversacionAbiertaId = id;
+  $("titulo-conversacion").textContent = id;
+  primeraCargaMensajes = true;
+  mostrarPantalla("vista-conversacion");
+  escucharMensajes(id);
+}
+
+$("btn-atras-conv").addEventListener("click", () => {
+  if(desuscribirMensajes) desuscribirMensajes();
+  conversacionAbiertaId = null;
+  if(cuenta && cuenta.rol === "propietario"){
+    mostrarPantalla("vista-lista");
+  }
+});
+
+/* ---------- Conversación ---------- */
+function escucharMensajes(id){
+  if(desuscribirMensajes) desuscribirMensajes();
+  const q = query(collection(db, "conversaciones", id, "mensajes"), orderBy("fecha"));
+  desuscribirMensajes = onSnapshot(q, (snap) => {
+    const cont = $("mensajes");
+    cont.innerHTML = "";
+    snap.forEach(docSnap => {
+      cont.appendChild(construirBurbuja(docSnap.data()));
+    });
+    cont.scrollTop = cont.scrollHeight;
+
+    if(!primeraCargaMensajes){
+      snap.docChanges().forEach(cambio => {
+        const m = cambio.data();
+        if(cambio.type === "added" && m.autor !== cuenta.username && document.hidden){
+          notificar("Mensaje nuevo", m.tipo === "texto" ? m.contenido : "Adjunto recibido");
+        }
+      });
+    }
+    primeraCargaMensajes = false;
+  });
+}
+
+function construirBurbuja(m){
+  const div = document.createElement("div");
+  if(m.tipo === "sistema"){
+    div.className = "burbuja sistema";
+    div.textContent = m.contenido;
+    return div;
+  }
+  const esPropio = m.autor === cuenta.username;
+  div.className = "burbuja " + (esPropio ? "propio" : "ajeno");
+
+  if(m.tipo === "texto"){
+    div.textContent = m.contenido;
+  }else if(m.tipo === "imagen"){
+    const img = document.createElement("img");
+    img.src = m.contenido;
+    img.className = "adjunto";
+    div.appendChild(img);
+  }else if(m.tipo === "audio"){
+    const audio = document.createElement("audio");
+    audio.src = m.contenido;
+    audio.controls = true;
+    div.appendChild(audio);
+  }else if(m.tipo === "documento"){
+    const a = document.createElement("a");
+    a.href = m.contenido;
+    a.download = m.nombreArchivo || "documento";
+    a.className = "archivo";
+    a.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/></svg><span>${m.nombreArchivo || "Documento"}</span>`;
+    div.appendChild(a);
+  }
+  const hora = document.createElement("span");
+  hora.className = "hora";
+  hora.textContent = formatoHora(m.fecha);
+  div.appendChild(hora);
+  return div;
+}
+
+function configurarConversacion(){
+  $("btn-enviar").addEventListener("click", enviarTexto);
+  $("campo-texto").addEventListener("keydown", (e) => {
+    if(e.key === "Enter") enviarTexto();
+  });
+
+  $("btn-adjuntar").addEventListener("click", () => {
+    $("menu-adjuntos").classList.toggle("abierto");
+  });
+  $("opt-imagen").addEventListener("click", () => {
+    $("menu-adjuntos").classList.remove("abierto");
+    $("input-imagen").click();
+  });
+  $("opt-documento").addEventListener("click", () => {
+    $("menu-adjuntos").classList.remove("abierto");
+    $("input-documento").click();
+  });
+  $("input-imagen").addEventListener("change", manejarImagen);
+  $("input-documento").addEventListener("change", manejarDocumento);
+
+  $("btn-audio").addEventListener("click", alternarGrabacion);
+
+  $("btn-ir-cuenta").addEventListener("click", () => mostrarPantalla("vista-cuenta"));
+  $("btn-ir-cuenta-2").addEventListener("click", () => mostrarPantalla("vista-cuenta"));
+}
+
+async function enviarTexto(){
+  const campo = $("campo-texto");
+  const texto = campo.value.trim();
+  if(!texto) return;
+  campo.value = "";
+  await enviarMensaje("texto", texto);
+}
+
+function manejarImagen(e){
+  const archivo = e.target.files[0];
+  if(!archivo) return;
+  const lector = new FileReader();
+  lector.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => {
+      const maxAncho = 800;
+      const escala = Math.min(1, maxAncho / img.width);
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width * escala;
+      canvas.height = img.height * escala;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const base64 = canvas.toDataURL("image/jpeg", 0.65);
+      if(base64.length > LIMITE_ADJUNTO){
+        alert("La imagen es demasiado grande incluso comprimida. Intenta con otra.");
+        return;
+      }
+      enviarMensaje("imagen", base64);
+    };
+    img.src = ev.target.result;
+  };
+  lector.readAsDataURL(archivo);
+  e.target.value = "";
+}
+
+function manejarDocumento(e){
+  const archivo = e.target.files[0];
+  if(!archivo) return;
+  const lector = new FileReader();
+  lector.onload = (ev) => {
+    const base64 = ev.target.result;
+    if(base64.length > LIMITE_ADJUNTO){
+      alert("El documento supera el tamaño máximo permitido (~500 KB).");
+      return;
+    }
+    enviarMensaje("documento", base64, archivo.name);
+  };
+  lector.readAsDataURL(archivo);
+  e.target.value = "";
+}
+
+async function alternarGrabacion(){
+  if(grabador && grabador.state === "recording"){
+    grabador.stop();
+    return;
+  }
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    grabador = new MediaRecorder(stream);
+    trozosAudio = [];
+    grabador.ondataavailable = (e) => trozosAudio.push(e.data);
+    grabador.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+      $("btn-audio").classList.remove("grabando");
+      const blob = new Blob(trozosAudio, { type: "audio/webm" });
+      const lector = new FileReader();
+      lector.onload = (ev) => {
+        const base64 = ev.target.result;
+        if(base64.length > LIMITE_ADJUNTO){
+          alert("La nota de audio es demasiado larga. Intenta una más breve.");
+          return;
+        }
+        enviarMensaje("audio", base64);
+      };
+      lector.readAsDataURL(blob);
+    };
+    grabador.start();
+    $("btn-audio").classList.add("grabando");
+  }catch(err){
+    alert("No se pudo acceder al micrófono.");
+  }
+}
+
+async function enviarMensaje(tipo, contenido, nombreArchivo=null){
+  if(!conversacionAbiertaId) return;
+  await addDoc(collection(db, "conversaciones", conversacionAbiertaId, "mensajes"), {
+    autor: cuenta.username, tipo, contenido, nombreArchivo, fecha: serverTimestamp()
+  });
+  const resumen = tipo === "texto" ? contenido : tipo === "imagen" ? "Imagen" : tipo === "audio" ? "Nota de audio" : "Documento: " + (nombreArchivo || "");
+  await setDoc(doc(db, "conversaciones", conversacionAbiertaId), {
+    participante: conversacionAbiertaId,
+    ultimoMensaje: resumen,
+    ultimoAutor: cuenta.username,
+    ultimaFecha: serverTimestamp()
+  }, { merge: true });
+}
+
+/* ---------- Cuenta ---------- */
+function configurarCuenta(){
+  $("cuenta-usuario").textContent = cuenta.username;
+  $("cuenta-rol").textContent = cuenta.rol === "propietario" ? "Cuenta principal" : "Estándar";
+
+  $("btn-atras-cuenta").addEventListener("click", () => {
+    if(cuenta.rol === "propietario" && !conversacionAbiertaId){
+      mostrarPantalla("vista-lista");
+    }else{
+      mostrarPantalla("vista-conversacion");
+    }
+  });
+
+  $("btn-ver-clave").addEventListener("click", () => {
+    const span = $("cuenta-clave");
+    const oculto = span.textContent === "••••••••";
+    span.textContent = oculto ? cuenta.password : "••••••••";
+    $("btn-ver-clave").textContent = oculto ? "Ocultar" : "Mostrar";
+  });
+
+  $("btn-cambiar-clave").addEventListener("click", cambiarClave);
+  $("btn-cerrar-sesion").addEventListener("click", () => {
+    olvidarIdentidadDispositivo();
+    sessionStorage.removeItem("mensajeria_aviso_conexion");
+    location.reload();
+  });
+
+  $("btn-mostrar-vinculo").addEventListener("click", () => {
+    $("form-vinculo").style.display = $("form-vinculo").style.display === "block" ? "none" : "block";
+  });
+  $("btn-confirmar-vinculo").addEventListener("click", vincularCuentaExistente);
+}
+
+async function vincularCuentaExistente(){
+  const usuario = $("vinculo-usuario").value.trim();
+  const clave = $("vinculo-clave").value;
+  $("vinculo-error").style.display = "none";
+  if(!usuario || !clave) return;
+  const ref = doc(db, "cuentas", usuario);
+  const snap = await getDoc(ref);
+  if(!snap.exists() || snap.data().password !== clave){
+    $("vinculo-error").textContent = "Usuario o contraseña incorrectos.";
+    $("vinculo-error").style.display = "block";
+    return;
+  }
+  await guardarIdentidadDispositivo(usuario);
+  location.reload();
+}
+
+async function cambiarClave(){
+  const actual = $("clave-actual").value;
+  const nueva = $("clave-nueva").value;
+  const confirmar = $("clave-confirmar").value;
+  $("clave-error").style.display = "none";
+  $("clave-ok").style.display = "none";
+
+  if(actual !== cuenta.password){
+    $("clave-error").textContent = "La contraseña actual no es correcta.";
+    $("clave-error").style.display = "block";
+    return;
+  }
+  if(nueva.length < 4){
+    $("clave-error").textContent = "La nueva contraseña debe tener al menos 4 caracteres.";
+    $("clave-error").style.display = "block";
+    return;
+  }
+  if(nueva !== confirmar){
+    $("clave-error").textContent = "Las contraseñas no coinciden.";
+    $("clave-error").style.display = "block";
+    return;
+  }
+  await updateDoc(doc(db, "cuentas", cuenta.username), { password: nueva });
+  cuenta.password = nueva;
+  $("clave-actual").value = "";
+  $("clave-nueva").value = "";
+  $("clave-confirmar").value = "";
+  $("clave-ok").textContent = "Contraseña actualizada correctamente.";
+  $("clave-ok").style.display = "block";
+}
+
+/* ---------- Notificaciones ---------- */
+function configurarNotificaciones(){
+  actualizarEstadoNotif();
+  $("btn-activar-notif").addEventListener("click", async () => {
+    if(!("Notification" in window)){
+      $("estado-notif").textContent = "Este navegador no admite notificaciones.";
+      return;
+    }
+    const permiso = await Notification.requestPermission();
+    actualizarEstadoNotif();
+  });
+}
+
+function actualizarEstadoNotif(){
+  if(!("Notification" in window)){
+    $("estado-notif").textContent = "No disponibles en este navegador.";
+    return;
+  }
+  const estados = { granted: "Activadas.", denied: "Bloqueadas por el navegador.", default: "Aún no activadas." };
+  $("estado-notif").textContent = estados[Notification.permission];
+}
+
+function notificar(titulo, cuerpo){
+  if("Notification" in window && Notification.permission === "granted"){
+    new Notification(titulo, { body: cuerpo || "" });
+  }
+}
+
+/* ---------- Cerrar menús al tocar fuera ---------- */
+document.addEventListener("click", (e) => {
+  const menu = $("menu-adjuntos");
+  const boton = $("btn-adjuntar");
+  if(menu && menu.classList.contains("abierto") && !menu.contains(e.target) && e.target !== boton && !boton.contains(e.target)){
+    menu.classList.remove("abierto");
+  }
+});
+
+iniciar();
+</script>
+</body>
+</html>
